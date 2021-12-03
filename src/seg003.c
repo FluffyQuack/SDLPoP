@@ -240,14 +240,16 @@ void __pascal far draw_level_first() {
 // seg003:037B
 void __pascal far redraw_screen(int drawing_different_room) {
 	//remove_flash();
-	if (drawing_different_room) {
-		draw_rect(&rect_top, 0);
-#ifdef USE_DARK_TRANSITION
-		// Briefly show a dark screen when changing rooms, like in the original game.
-		update_screen();
-		SDL_Delay(100);
-#endif
-	}
+	
+	//Fluffy (RemoveFlashBetweenRooms): Commented this away
+//	if (drawing_different_room) {
+//		draw_rect(&rect_top, 0);
+//#ifdef USE_DARK_TRANSITION
+//		// Briefly show a dark screen when changing rooms, like in the original game.
+//		update_screen();
+//		SDL_Delay(100);
+//#endif
+//	}
 
 	different_room = 0;
 	if (is_blind_mode) {
@@ -306,7 +308,7 @@ void __pascal far redraw_screen(int drawing_different_room) {
 			clear_kbd_buf();
 		}
 	}
-	exit_room_timer = 2;
+	exit_room_timer = 0; //Fluffy (RemoveFlashBetweenRooms): Changed this from 2 to 0. I'm not sure if this is actually related to the black flashing between rooms, so maybe this was unnecessary to remove
 
 }
 
