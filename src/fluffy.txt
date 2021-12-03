@@ -1,0 +1,24 @@
+Progress trying to make this build:
+- Added two BATs for compiling
+- Start a command prompt instance in this directory
+- Run fluffy-build-step1.bat
+- Run fluffy-build-step2.bat
+
+Edits required:
+- Edited two lines in build.bat to be like this:
+
+set CommonCompilerFlags= /nologo /MP /fp:fast /GR- /wd4048 %PreprocessorDefinitions% /I"%SDL2%\include\SDL2" /I"%SDL2_Image%\include\SDL2"
+set CommonLinkerFlags= /subsystem:windows,5.01 /libpath:"%SDL2%\lib\" /libpath:"%SDL2_Image%\lib\" /libpath:"%SDL2%\lib\manual-link\" Shell32.lib SDL2main.lib SDL2.lib SDL2_image.lib icon.res /out:..\prince.exe
+
+- Edited seg000.c to included these lines to fix a compile error:
+
+//Fluffy: Added this since we got compile error due to missing M_PI
+#ifndef M_PI
+	#define M_PI  3.14159265358979323846264f  // from CRC
+#endif
+
+- Commented out the code calling SetProcessDPIAware() in seg009.c to fix a compilation error
+
+- Renamed the "wstat()" call to "_wstat()" in seg009.c
+
+- Maybe it would be possible to create a visual studio project?

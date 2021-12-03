@@ -22,6 +22,11 @@ The authors of this program may be contacted at https://forum.princed.org
 #include <setjmp.h>
 #include <math.h>
 
+//Fluffy: Added this since we got compile error due to missing M_PI
+#ifndef M_PI
+#define M_PI  3.14159265358979323846264f  // from CRC
+#endif
+
 // data:461E
 dat_type * dathandle;
 

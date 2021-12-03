@@ -112,7 +112,7 @@ int access_UTF8(const char* filename_UTF8, int mode) {
 int stat_UTF8(const char *filename_UTF8, struct stat *_Stat) {
 	WCHAR* filename_UTF16 = WIN_UTF8ToString(filename_UTF8);
 	// There is a _wstat() function as well, but it expects the second argument to be a different type than stat().
-	int result = wstat(filename_UTF16, _Stat);
+	int result = _wstat(filename_UTF16, _Stat); //Fluffy: Replaced call to wstat() with _wstat(). Is that safe?
 	SDL_free(filename_UTF16);
 	return result;
 }
@@ -2459,19 +2459,21 @@ void __pascal far set_gr_mode(byte grmode) {
 		pop_window_height = 480;
 	}
 
+/* Fluffy: Commented away this in order to fix a compilation error
 #if _WIN32
 	// Tell Windows that the application is DPI aware, to prevent unwanted bitmap stretching.
 	// SetProcessDPIAware() is only available on Windows Vista and later, so we need to load it dynamically.
 	BOOL WINAPI (*SetProcessDPIAware)();
 	HMODULE user32dll = LoadLibraryA("User32.dll");
 	if (user32dll) {
-		SetProcessDPIAware = GetProcAddress(user32dll, "SetProcessDPIAware");
-		if (SetProcessDPIAware) {
-			SetProcessDPIAware();
-		}
-		FreeLibrary(user32dll);
+	SetProcessDPIAware = GetProcAddress(user32dll, "SetProcessDPIAware");
+	if (SetProcessDPIAware) {
+	SetProcessDPIAware();
+	}
+	FreeLibrary(user32dll);
 	}
 #endif
+*/
 
 #ifdef USE_REPLAY
 	if (!is_validate_mode) // run without a window if validating a replay
