@@ -2645,7 +2645,6 @@ void draw_overlay(void) {
 	}
 }
 
-
 //Fluffy (MultiRoomRendering): Update the camera offset that's used for smooth camera movement between rooms
 float GetCameraOffset()
 {

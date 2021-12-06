@@ -647,6 +647,7 @@ void set_chtab_palette(chtab_type* chtab, byte* colors, int n_colors);
 int has_timer_stopped(int index);
 sound_buffer_type* load_sound(int index);
 void free_sound(sound_buffer_type far *buffer);
+float GetCameraOffset(); //Fluffy (MultiRoomRendering)
 
 // SEQTABLE.C
 void apply_seqtbl_patches(void);
