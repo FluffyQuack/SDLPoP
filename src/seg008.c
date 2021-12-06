@@ -175,6 +175,15 @@ void __pascal far draw_tile_aboveroom() {
 	draw_tile_fore();
 }
 
+bool SwordOnThisTile(short tilepos) //Fluffy (MultiRoomRendering)
+{
+	for (int index = 0; index < trobs_count; ++index) {
+		if(trobs[index].room == drawn_room && trobs[index].tilepos == tilepos) //TODO: We should check if this is actually a sword... but I don't know how
+			return 1;
+	}
+	return 0;
+}
+
 // seg008:0211
 void __pascal far redraw_needed(short tilepos) {
 	if (wipe_frames[tilepos]) {
@@ -185,11 +194,30 @@ void __pascal far redraw_needed(short tilepos) {
 		--redraw_frames_full[tilepos];
 		draw_tile();
 	} else {
-		if (redraw_frames_anim[tilepos]) {
+
+		//Fluffy (MultiRoomRendering): Old version of below code
+		/*if (redraw_frames_anim[tilepos]) {
 			--redraw_frames_anim[tilepos];
 			draw_tile_anim_topright();
 			draw_tile_anim_right();
 			draw_tile_anim();
+#ifdef FIX_ABOVE_GATE
+			draw_tile_fore();
+			draw_tile_bottom(0);
+#endif
+		}*/
+
+		if (redraw_frames_anim[tilepos]) {
+			draw_tile_anim_topright();
+			draw_tile_anim_right();
+		}
+
+		if(redraw_frames_anim[tilepos] || SwordOnThisTile(tilepos)) //Fluffy (MultiRoomRendering): Always re-drawing this tile fixes a bug where a sword doesn't sparkle if we're rendering via redraw_screen()
+		//if(redraw_frames_anim[tilepos] || curr_room_tiles[tilepos] & 0x1F == tiles_22_sword) //Fluffy (MultiRoomRendering): This would be a better way to check if this tile has a sword... but this check fails for some reason
+			draw_tile_anim();
+
+		if (redraw_frames_anim[tilepos]) {
+			--redraw_frames_anim[tilepos];
 #ifdef FIX_ABOVE_GATE
 			draw_tile_fore();
 			draw_tile_bottom(0);

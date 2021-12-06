@@ -90,7 +90,7 @@ void __pascal far animate_tile() {
 
 // seg007:0166
 short __pascal far is_trob_in_drawn_room() {
-	if (trob.room != drawn_room) {
+	if (trob.room != drawn_room && trob.room != room_L && trob.room != room_R) { //Fluffy (MultiRoomRendering): Allow trobs to be active if they're in this or adjacent room
 		trob.type = -1;
 		return 0;
 	} else {
@@ -248,14 +248,13 @@ short __pascal far get_trob_right_above_pos_in_drawn_room() {
 void __pascal far animate_torch() {
 	//if (is_trob_in_drawn_room()) {
 	// Keep animating torches in the rightmost column of the left-side room as well, because they are visible in the current room.
-	if (trob.room == drawn_room || (trob.room == room_L && (trob.tilepos % 10) == 9) ) {
+	//if (trob.room == drawn_room || (trob.room == room_L && (trob.tilepos % 10) == 9) ) { //Fluffy (MultiRoomRendering): Commented this away
+	if (trob.room == drawn_room || trob.room == room_L || trob.room == room_R) { //Fluffy (MultiRoomRendering): Allow trobs to be active if they're in this or adjacent room
 		curr_modifier = get_torch_frame(curr_modifier);
 		set_redraw_anim_right();
 	} else {
 		trob.type = -1;
 	}
-
-	//Fluffy (MultiRoomRendering) TODO: Update this if it's in the same room or an adjacent room
 }
 
 // seg007:03E9
@@ -270,8 +269,6 @@ void __pascal far animate_potion() {
 		set_redraw_anim_curr();
 #endif
 	}
-
-	//Fluffy (MultiRoomRendering) TODO: Update this if it's in the same room or an adjacent room
 }
 
 // seg007:0425
@@ -287,8 +284,6 @@ void __pascal far animate_sword() {
 		set_redraw_anim_curr();
 #endif
 	}
-
-	//Fluffy (MultiRoomRendering) TODO: Update this if it's in the same room or an adjacent room
 }
 
 // seg007:0448

@@ -1191,15 +1191,16 @@ void __pascal far anim_tile_modif() {
 		}
 	}
 
-	// Animate torches in the rightmost column of the left-side room as well, because they are visible in the current room.
-	for (int row = 0; row <= 2; row++) {
-		switch (get_tile(room_L, 9, row)) {
-			case tiles_19_torch:
-			case tiles_30_torch_with_debris:
-				start_anim_torch(room_L, row * 10 + 9);
-			break;
-		}
-	}
+	//Fluffy (MultiRoomRendering): Commented this away as we're always adding trops from nearby rooms
+	//// Animate torches in the rightmost column of the left-side room as well, because they are visible in the current room.
+	//for (int row = 0; row <= 2; row++) {
+	//	switch (get_tile(room_L, 9, row)) {
+	//		case tiles_19_torch:
+	//		case tiles_30_torch_with_debris:
+	//			start_anim_torch(room_L, row * 10 + 9);
+	//		break;
+	//	}
+	//}
 }
 
 // seg000:0B72
@@ -1454,7 +1455,30 @@ void __pascal far check_the_end() {
 		different_room = 1;
 		loadkid();
 		anim_tile_modif();
-		//Fluffy (MultiRoomRendering) TODO: Add torches, potions, and sword from adjacent rooms
+		
+		//Fluffy (MultiRoomRendering): Add torches, potions, and sword from adjacent rooms
+		byte *prevRoomTiles = curr_room_tiles;
+		byte *prevRoomModif = curr_room_modif;
+		word prevRoom = drawn_room;
+		if(room_L) //Left room
+		{
+			drawn_room = room_L;
+			curr_room_tiles = &level.fg[(drawn_room - 1) * 30];
+			curr_room_modif = &level.bg[(drawn_room - 1) * 30];
+			anim_tile_modif();
+			drawn_room = prevRoom;
+		}
+		if(room_R) //Right
+		{
+			drawn_room = room_R;
+			curr_room_tiles = &level.fg[(drawn_room - 1) * 30];
+			curr_room_modif = &level.bg[(drawn_room - 1) * 30];
+			anim_tile_modif();
+			drawn_room = prevRoom;
+		}
+		curr_room_tiles = prevRoomTiles;
+		curr_room_modif = prevRoomModif;
+
 		start_chompers();
 		check_fall_flo();
 		check_shadow();
