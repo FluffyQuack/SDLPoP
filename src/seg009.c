@@ -2366,11 +2366,14 @@ int __pascal far check_sound_playing() {
 
 void apply_aspect_ratio() {
 	// Allow us to use a consistent set of screen co-ordinates, even if the screen size changes
-	if (use_correct_aspect_ratio) {
-		SDL_RenderSetLogicalSize(renderer_, 320 * 5, 200 * 6); // 4:3
-	} else {
-		SDL_RenderSetLogicalSize(renderer_, 320, 200); // 16:10
-	}
+	
+	//Fluffy (MultiRoomRendering): Commented this away as we're now handling aspect ratio correction during rendering
+	//if (use_correct_aspect_ratio) {
+	//	SDL_RenderSetLogicalSize(renderer_, 320 * 5, 200 * 6); // 4:3
+	//} else {
+	//	SDL_RenderSetLogicalSize(renderer_, 320, 200); // 16:10
+	//}
+
 	window_resized();
 }
 
@@ -2408,6 +2411,8 @@ void init_scaling(void) {
 
 	if (texture_sharp == NULL) {
 		texture_sharp = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STREAMING, 320, 200);
+		texture_sharp_right = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STREAMING, 320, 200); //Fluffy (MultiRoomRendering): For storing render of room to the right
+		texture_sharp_left = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STREAMING, 320, 200); //Fluffy (MultiRoomRendering): For storing render of room to the left
 	}
 	if (scaling_type == 1) {
 		if (!is_renderer_targettexture_supported && onscreen_surface_2x == NULL) {
@@ -2520,7 +2525,9 @@ void __pascal far set_gr_mode(byte grmode) {
 	 * The function handling the screen updates is update_screen()
 	 * */
 	onscreen_surface_ = SDL_CreateRGBSurface(0, 320, 200, 24, 0xFF, 0xFF << 8, 0xFF << 16, 0);
-	if (onscreen_surface_ == NULL) {
+	onscreen_surface_left = SDL_CreateRGBSurface(0, 320, 200, 24, 0xFF, 0xFF << 8, 0xFF << 16, 0); //Fluffy (MultiRoomRendering): For storing render of room to the left
+	onscreen_surface_right = SDL_CreateRGBSurface(0, 320, 200, 24, 0xFF, 0xFF << 8, 0xFF << 16, 0); //Fluffy (MultiRoomRendering): For storing render of room to the right
+	if (onscreen_surface_ == NULL || onscreen_surface_left == NULL || onscreen_surface_right == NULL) {
 		sdlperror("set_gr_mode: SDL_CreateRGBSurface");
 		quit(1);
 	}
@@ -2638,6 +2645,44 @@ void draw_overlay(void) {
 	}
 }
 
+
+//Fluffy (MultiRoomRendering): Update the camera offset that's used for smooth camera movement between rooms
+float GetCameraOffset()
+{
+#define CAMERASPEED 500.0f //1000.0f means it takes 1 second to reach new position (lower number is faster)
+	float curOffset = renderPosOffsetPrevious;
+	if(renderPosOffsetPrevious != renderPosOffsetTarget)
+	{
+		unsigned int curTicks = SDL_GetTicks();
+		float progress = (float) (curTicks - renderPosOffsetTimerStart) / CAMERASPEED;
+
+		if(progress >= 1.0f)
+			curOffset = renderPosOffsetPrevious = renderPosOffsetTarget;
+		else
+		{
+			//Ease calculations are based on quad blend flibberflabflab equation
+			bool easeIn = 1, easeOut = 1;
+			if(easeIn == 1 && easeOut == 0)
+				progress = 1.0f - pow(progress - 1, 2);
+			else if(easeIn == 0 && easeOut == 1)
+				progress = pow(progress, 2);
+			else if(easeIn == 1 && easeOut == 1)
+			{
+				if(progress <= 0.5f)
+					progress = 2.0f * pow(progress, 2);
+				else
+				{
+					progress = progress - 0.5f;
+					progress = 2.0f * progress * (1.0f - progress) + 0.5;
+				}
+			}
+
+			curOffset += (renderPosOffsetTarget - renderPosOffsetPrevious) * progress;
+		}
+	}
+	return curOffset;
+}
+
 void update_screen() {
 	draw_overlay();
 	SDL_Surface* surface = get_final_surface();
@@ -2663,7 +2708,57 @@ void update_screen() {
 		SDL_UpdateTexture(target_texture, NULL, surface->pixels, surface->pitch);
 	}
 	SDL_RenderClear(renderer_);
-	SDL_RenderCopy(renderer_, target_texture, NULL, NULL);
+
+	//Fluffy (MultiRoomRendering): Update camera's exact position
+	float curOffset = GetCameraOffset();
+
+	//Fluffy (MultiRoomRendering): Render middle (aka main) screen
+	SDL_Rect srcRect, dstRect;
+	float fullWidth = (320.0f / 240.0f) * (float) pop_window_height; //Replace 240 with 200 for incorrect aspect ratio with square pixels
+	float gap = pop_window_width - fullWidth;
+	srcRect.x = 0;
+	srcRect.y = 0;
+	srcRect.w = 320;
+	srcRect.h = 200 - 8;
+	dstRect.x = curOffset + (gap / 2);
+	dstRect.y = 0;
+	dstRect.w = fullWidth;
+	dstRect.h = pop_window_height - ((pop_window_height / 200) * 8);
+	SDL_RenderCopy(renderer_, target_texture, &srcRect, &dstRect);
+
+	//Fluffy (MultiRoomRendering): Right screen
+	SDL_UpdateTexture(texture_sharp_right, NULL, onscreen_surface_right->pixels, onscreen_surface_right->pitch);
+	dstRect.x += fullWidth;
+	SDL_RenderCopy(renderer_, texture_sharp_right, &srcRect, &dstRect);
+
+	//Fluffy (MultiRoomRendering): Darken right screen
+	SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_BLEND);
+	SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 127);
+	SDL_RenderFillRect(renderer_, &dstRect);
+	SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_NONE);
+
+	//Fluffy (MultiRoomRendering): Left screen
+	SDL_UpdateTexture(texture_sharp_left, NULL, onscreen_surface_left->pixels, onscreen_surface_left->pitch);
+	dstRect.x -= fullWidth * 2;
+	SDL_RenderCopy(renderer_, texture_sharp_left, &srcRect, &dstRect);
+
+	//Fluffy (MultiRoomRendering): Darken left screen
+	SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_BLEND);
+	SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 127);
+	SDL_RenderFillRect(renderer_, &dstRect);
+	SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_NONE);
+
+	//Fluffy (MultiRoomRendering): Render hud at the bottom in the middle of the window
+	srcRect.x = 0;
+	srcRect.y = 200 - 8;
+	srcRect.w = 320;
+	srcRect.h = 8;
+	dstRect.x = gap / 2;
+	dstRect.y = pop_window_height - ((pop_window_height / 200) * 8);
+	dstRect.w = fullWidth;
+	dstRect.h = (pop_window_height / 200) * 8;
+	SDL_RenderCopy(renderer_, target_texture, &srcRect, &dstRect);
+
 	SDL_RenderPresent(renderer_);
 }
 
@@ -3611,10 +3706,11 @@ void __pascal do_simple_wait(int timer_index) {
 #ifdef USE_REPLAY
 	if ((replaying && skipping_replay) || is_validate_mode) return;
 #endif
-	update_screen();
+	//update_screen(); //Fluffy (MultiRoomRendering): Commented this away since we now do update_screen below
 	while (! has_timer_stopped(timer_index)) {
 		SDL_Delay(1);
 		process_events();
+		update_screen(); //Fluffy (MultiRoomRendering): Calling this so camera can smoothly move between rooms inbetween the game's 12fps tick rate
 	}
 }
 

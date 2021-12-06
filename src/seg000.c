@@ -904,11 +904,179 @@ void __pascal far play_frame() {
 	}
 }
 
+static void switchRoom(int activeRoom, int room) //Fluffy (MultiRoomRendering)
+{
+#define ROOMXOFFSET 140
+	//Back up prince values so we can use altered values temporarily
+	char_type kidBackup = Kid;
+	if(activeRoom != room)
+	{
+		if(room == level.roomlinks[Kid.room - 1].left)
+		{
+			if(Kid.x + ROOMXOFFSET <= 255)
+			{
+				Kid.curr_col += 10;
+				Kid.x += ROOMXOFFSET;
+				Kid.fall_x += ROOMXOFFSET;
+				/*if(Kid.direction == dir_FF_left)
+				{
+					Kid.x += 1;
+					Kid.fall_x += 1;
+				}*/
+				Kid.room = room;
+			}
+		}
+		else if(room == level.roomlinks[Kid.room - 1].right)
+		{
+			if(Kid.x - ROOMXOFFSET >= 0)
+			{
+				Kid.curr_col -= 10;
+				Kid.x -= ROOMXOFFSET;
+				Kid.fall_x -= ROOMXOFFSET;
+				Kid.room = room;
+			}
+		}
+	}
+
+	//Do the same for guard
+	char_type guardBackup = Guard;
+	char_type charBackup = Char;
+	word prevGuardColor = curr_guard_color;
+	if(activeRoom != room)
+	{
+		if(room == level.roomlinks[activeRoom - 1].left && (Guard.direction != dir_56_none && Guard.room == activeRoom))
+		{
+			if(Guard.x + ROOMXOFFSET >= 255)
+			{
+				Guard.x = 0;
+				Guard.fall_x = 0;
+			}
+			else
+			{
+				Guard.curr_col += 8;
+				Guard.x += ROOMXOFFSET;
+				Guard.fall_x += ROOMXOFFSET;
+				Guard.room = room;
+			}
+		}
+		else if(room == level.roomlinks[activeRoom - 1].right && (Guard.direction != dir_56_none && Guard.room == activeRoom))
+		{
+			if(Guard.x - ROOMXOFFSET < 0)
+			{
+				Guard.x = 0;
+				Guard.fall_x = 0;
+			}
+			else
+			{
+				Guard.curr_col -= 8;
+				Guard.x -= ROOMXOFFSET;
+				Guard.fall_x -= ROOMXOFFSET;
+				Guard.room = room;
+			}
+		}
+		else if(level.guards_tile[room - 1] != -1 && level.guards_tile[room - 1] < 30)
+		{
+			//The following code is based on enter_guard()
+			Guard.room = room;
+			Guard.curr_row = level.guards_tile[room - 1] / 10;
+			Guard.y = y_land[Guard.curr_row + 1];
+			Guard.x = level.guards_x[room - 1];
+			Guard.curr_col = get_tile_div_mod_m7(Guard.x);
+			Guard.direction = level.guards_dir[room - 1];
+			// only regular guards have different colors (and only on VGA)
+			if (graphics_mode == gmMcgaVga && custom->tbl_guard_type[current_level] == 0) {
+				curr_guard_color = level.guards_color[room - 1];
+			} else {
+				curr_guard_color = 0;
+			}
+			curr_guard_color &= 0x0F; // added; only least significant 4 bits are used for guard color
+			if (custom->tbl_guard_type[current_level] == 2) {
+				Guard.charid = charid_4_skeleton;
+			} else {
+				Guard.charid = charid_2_guard;
+			}
+			byte seq_hi = level.guards_seq_hi[room - 1];
+			if (seq_hi == 0) {
+				if (Guard.charid == charid_4_skeleton) {
+					Guard.sword = sword_2_drawn;
+					seqtbl_offset_char(seq_63_guard_stand_active); // stand active (when entering room) (skeleton)
+					Guard.curr_seq = Char.curr_seq;
+				} else {
+					//Guard.sword = sword_0_sheathed;
+					Guard.sword = sword_2_drawn;
+					seqtbl_offset_char(seq_77_guard_stand_inactive); // stand inactive (when entering room)
+					Guard.curr_seq = Char.curr_seq;
+				}
+			} else {
+				Guard.curr_seq = level.guards_seq_lo[room - 1] + (seq_hi << 8);
+			}
+			Char = Guard;
+			play_seq();
+			Guard = Char;
+//			byte frame = Guard.frame;
+//			if (frame == frame_185_dead || frame == frame_177_spiked || frame == frame_178_chomped) {
+//				//Guard.alive = 1;
+//				//draw_guard_hp(0, guardhp_curr);
+//				//guardhp_curr = 0;
+//			} else {
+//				//Guard.alive = -1;
+//				//justblocked = 0;
+//				//guard_refrac = 0;
+//				//is_guard_notice = 0;
+//				//get_guard_hp();
+//#ifdef REMEMBER_GUARD_HP
+//				//if (fixes->enable_remember_guard_hp && remembered_hp > 0)
+//					//guardhp_delta = guardhp_curr = (word) remembered_hp;
+//#endif
+			//}
+			Guard.fall_y = 0;
+			Guard.fall_x = 0;
+			Guard.action = actions_1_run_jump;
+		}
+		else
+		{
+			Guard.x = 0;
+			Guard.fall_x = 0;
+		}
+	}
+
+	drawn_room = room;
+	load_room_links();
+
+	if (custom->tbl_level_type[current_level]) {
+		gen_palace_wall_colors();
+	}
+
+	// for guards
+	//check_shadow(); // otherwise the shadow won't appear on level 6
+
+	// for potion bubbles
+	for (int tilepos=0;tilepos<30;tilepos++) {
+		int tile_type = curr_room_tiles[tilepos] & 0x1F;
+		if (tile_type == tiles_10_potion) {
+			int modifier = curr_room_modif[tilepos];
+			if ((modifier & 7) == 0) curr_room_modif[tilepos]++;
+		}
+	}
+		
+	redraw_screen(activeRoom != room);
+
+	//Restore prince and guard values
+	if(activeRoom != room)
+	{
+		Kid = kidBackup;
+	}
+	Guard = guardBackup;
+	Char = charBackup;
+	curr_guard_color = prevGuardColor;
+}
+
 // seg000:09B6
 void __pascal far draw_game_frame() {
 	short var_2;
+	
 	if (need_full_redraw) {
-		redraw_screen(0);
+		//redraw_screen(0); //Fluffy (MultiRoomRendering): Commented away since we always render screen below
 		need_full_redraw = 0;
 	} else {
 		if (different_room) {
@@ -916,13 +1084,14 @@ void __pascal far draw_game_frame() {
 			if (custom->tbl_level_type[current_level]) {
 				gen_palace_wall_colors();
 			}
-			redraw_screen(1);
+			//redraw_screen(1); //Fluffy (MultiRoomRendering): Commented away since we always render screen below
 		} else {
 			if (need_redraw_because_flipped) {
 				need_redraw_because_flipped = 0;
-				redraw_screen(0);
+				//redraw_screen(0); //Fluffy (MultiRoomRendering): Commented away since we always render screen below
 			} else {
-				memset_near(&table_counts, 0, sizeof(table_counts));
+				//Fluffy (MultiRoomRendering): Commented following away away since we always render entire screen below
+				/*memset_near(&table_counts, 0, sizeof(table_counts));
 				draw_moving();
 				draw_tables();
 				if (is_blind_mode) {
@@ -937,10 +1106,30 @@ void __pascal far draw_game_frame() {
 				if (upside_down) {
 					flip_screen(offscreen_surface);
 				}
-				drects_count = 0;
+				drects_count = 0;*/
 			}
 		}
 	}
+
+	//Fluffy (MultiRoomRendering): //Change to left and right rooms and draw those
+	word prevRoom = drawn_room;
+	if(level.roomlinks[prevRoom - 1].left != 0) //Left room
+	{
+		switchRoom(prevRoom, level.roomlinks[prevRoom - 1].left);
+		SDL_BlitSurface(onscreen_surface_, NULL, onscreen_surface_left, NULL);
+	}
+	else
+		SDL_FillRect(onscreen_surface_left, NULL, 0);
+	if(level.roomlinks[prevRoom - 1].right != 0) //Right room
+	{
+		switchRoom(prevRoom, level.roomlinks[prevRoom - 1].right);
+		SDL_BlitSurface(onscreen_surface_, NULL, onscreen_surface_right, NULL);
+	}
+	else
+		SDL_FillRect(onscreen_surface_right, NULL, 0);
+
+	//Fluffy (MultiRoomRendering): Switch back to main room and draw it
+	switchRoom(prevRoom, prevRoom); 
 
 	play_next_sound();
 	// Note: texts are identified by their total time!
@@ -1265,6 +1454,7 @@ void __pascal far check_the_end() {
 		different_room = 1;
 		loadkid();
 		anim_tile_modif();
+		//Fluffy (MultiRoomRendering) TODO: Add torches, potions, and sword from adjacent rooms
 		start_chompers();
 		check_fall_flo();
 		check_shadow();

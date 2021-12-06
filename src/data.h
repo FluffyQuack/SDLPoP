@@ -426,7 +426,7 @@ extern word seamless;
 // data:4CBC
 extern trob_type trob;
 // data:4382
-extern trob_type trobs[30];
+extern trob_type trobs[TROBS_MAX];
 // data:431A
 extern short redraw_height;
 // data:24DA
@@ -617,6 +617,8 @@ extern byte edge_type;
 
 // data:596C
 extern SDL_Surface* onscreen_surface_;
+extern SDL_Surface* onscreen_surface_right; //Fluffy (MultiRoomRendering)
+extern SDL_Surface* onscreen_surface_left; //Fluffy (MultiRoomRendering)
 extern SDL_Surface* overlay_surface;
 extern SDL_Surface* merged_surface;
 extern SDL_Renderer* renderer_;
@@ -624,6 +626,8 @@ extern bool is_renderer_targettexture_supported;
 extern SDL_Window* window_;
 extern bool is_overlay_displayed;
 extern SDL_Texture* texture_sharp;
+extern SDL_Texture* texture_sharp_right; //Fluffy (MultiRoomRendering)
+extern SDL_Texture* texture_sharp_left; //Fluffy (MultiRoomRendering)
 extern SDL_Texture* texture_fuzzy;
 extern SDL_Texture* texture_blurry;
 extern SDL_Texture* target_texture;
@@ -921,6 +925,11 @@ extern int g_deprecation_number;
 
 extern byte always_use_original_music;
 extern byte always_use_original_graphics;
+
+//Fluffy (MultiRoomRendering)
+extern float renderPosOffsetPrevious;
+extern float renderPosOffsetTarget;
+extern unsigned int renderPosOffsetTimerStart;
 
 #undef INIT
 #undef extern

@@ -337,6 +337,34 @@ void __pascal far exit_room() {
 	}
 	savekid();
 	next_room = Char.room;
+
+	//Fluffy (MultiRoomRendering): Check if there's a room to the left or right, and then based on the result, adjust camera position so we don't show the non-existant room
+	float fullWidth = (320.0f / 240.0f) * (float) pop_window_height; //Replace 240 with 200 for incorrect aspect ratio with square pixels
+	float gap = pop_window_width - fullWidth;
+	GetCameraOffset();
+	renderPosOffsetTarget = 0.0f;
+	if(next_room == level.roomlinks[drawn_room - 1].left)
+	{
+		renderPosOffsetPrevious -= fullWidth;
+		if(level.roomlinks[next_room - 1].left == 0)
+			renderPosOffsetTarget -= gap / 2;
+	}
+	else if(next_room == level.roomlinks[drawn_room - 1].right)
+	{
+		renderPosOffsetPrevious += fullWidth;
+		if(level.roomlinks[next_room - 1].right == 0)
+			renderPosOffsetTarget += gap / 2;
+	}
+	else
+	{
+		if(level.roomlinks[next_room - 1].right == 0 && level.roomlinks[next_room - 1].left != 0)
+			renderPosOffsetTarget += gap / 2;
+		else if(level.roomlinks[next_room - 1].left == 0 && level.roomlinks[next_room - 1].right != 0)
+			renderPosOffsetTarget -= gap / 2;
+		renderPosOffsetPrevious = renderPosOffsetTarget;
+	}
+	renderPosOffsetTimerStart = SDL_GetTicks();
+
 	if (Guard.direction == dir_56_none) return;
 	if (Guard.alive < 0 && Guard.sword == sword_2_drawn) {
 		kid_room_m1 = Kid.room - 1;
