@@ -209,6 +209,9 @@ void __pascal far set_start_pos() {
 		// Special event: level 7 falling entry
 		// level 7, room 17: show room below
 		goto_other_room(3);
+
+		//Fluffy (MultiRoomRendering): exit_room_timer behaviour has been changed with our new camera system, so we apply a timer here preventing the room from switching for a short time (this necessary due to the prince's y coordinate being very high, which would normally make the game want to change room further down, which would be wrong behaviour, so we give it time to overflow so it becomes a low value)
+		exit_room_timer = 10;
 	}
 	savekid();
 }
@@ -320,8 +323,7 @@ void __pascal far redraw_screen(int drawing_different_room) {
 			clear_kbd_buf();
 		}
 	}
-	exit_room_timer = 0; //Fluffy (RemoveFlashBetweenRooms): Changed this from 2 to 0. I'm not sure if this is actually related to the black flashing between rooms, so maybe this was unnecessary to remove
-
+	//exit_room_timer = 2; //Fluffy (RemoveFlashBetweenRooms): Removed this as it's no longer necessary. We want rooms to transition as quickly as possible with our new camera system. This also needs to be gone for the level 7 room switch to work correctly
 }
 
 #ifdef CHECK_TIMING
