@@ -1117,6 +1117,7 @@ void __pascal far draw_game_frame() {
 	{
 		switchRoom(prevRoom, level.roomlinks[prevRoom - 1].left);
 		SDL_BlitSurface(onscreen_surface_, NULL, onscreen_surface_left, NULL);
+		texture_sharp_left_needUpload = 1;
 	}
 	else
 		SDL_FillRect(onscreen_surface_left, NULL, 0);
@@ -1124,6 +1125,7 @@ void __pascal far draw_game_frame() {
 	{
 		switchRoom(prevRoom, level.roomlinks[prevRoom - 1].right);
 		SDL_BlitSurface(onscreen_surface_, NULL, onscreen_surface_right, NULL);
+		texture_sharp_right_needUpload = 1;
 	}
 	else
 		SDL_FillRect(onscreen_surface_right, NULL, 0);

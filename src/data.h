@@ -626,8 +626,14 @@ extern bool is_renderer_targettexture_supported;
 extern SDL_Window* window_;
 extern bool is_overlay_displayed;
 extern SDL_Texture* texture_sharp;
-extern SDL_Texture* texture_sharp_right; //Fluffy (MultiRoomRendering)
-extern SDL_Texture* texture_sharp_left; //Fluffy (MultiRoomRendering)
+
+//Fluffy (MultiRoomRendering)
+extern SDL_Texture* texture_sharp_extra[3];
+bool texture_sharp_right_needUpload;
+bool texture_sharp_left_needUpload;
+extern SDL_Texture* texture_sharp_right_ptr;
+extern SDL_Texture* texture_sharp_left_ptr;
+extern SDL_Texture* texture_sharp_faraway_ptr;
 extern SDL_Texture* texture_fuzzy;
 extern SDL_Texture* texture_blurry;
 extern SDL_Texture* target_texture;

@@ -2411,8 +2411,17 @@ void init_scaling(void) {
 
 	if (texture_sharp == NULL) {
 		texture_sharp = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STREAMING, 320, 200);
-		texture_sharp_right = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STREAMING, 320, 200); //Fluffy (MultiRoomRendering): For storing render of room to the right
-		texture_sharp_left = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STREAMING, 320, 200); //Fluffy (MultiRoomRendering): For storing render of room to the left
+
+		//Fluffy (MultiRoomRendering): Extra textures for storing extra rooms
+		for(int i = 0; i < 3; i++)
+			texture_sharp_extra[i] = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STREAMING, 320, 200);
+		
+		//Fluffy (MultiRoomRendering): These pointers will swap around depending on how the player moves between rooms
+		texture_sharp_right_ptr = texture_sharp_extra[0];
+		texture_sharp_left_ptr = texture_sharp_extra[1];
+		texture_sharp_right_needUpload = 0;
+		texture_sharp_left_needUpload = 0;
+		texture_sharp_faraway_ptr = 0; //For storing render of a room that's two rooms away, which is required when scrolling between rooms (since a room that's two rooms away is briefly visible)
 	}
 	if (scaling_type == 1) {
 		if (!is_renderer_targettexture_supported && onscreen_surface_2x == NULL) {
@@ -2682,6 +2691,14 @@ float GetCameraOffset()
 	return curOffset;
 }
 
+static void Darken(SDL_Rect dstRect) //Fluffy (MultiRoomRendering)
+{
+	SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_BLEND);
+	SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 127);
+	SDL_RenderFillRect(renderer_, &dstRect);
+	SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_NONE);
+}
+
 void update_screen() {
 	draw_overlay();
 	SDL_Surface* surface = get_final_surface();
@@ -2726,26 +2743,47 @@ void update_screen() {
 	SDL_RenderCopy(renderer_, target_texture, &srcRect, &dstRect);
 
 	//Fluffy (MultiRoomRendering): Right screen
-	SDL_UpdateTexture(texture_sharp_right, NULL, onscreen_surface_right->pixels, onscreen_surface_right->pitch);
-	dstRect.x += fullWidth;
-	SDL_RenderCopy(renderer_, texture_sharp_right, &srcRect, &dstRect);
+	if(dstRect.x + fullWidth < pop_window_width)
+	{
+		dstRect.x += fullWidth;
+		if(texture_sharp_right_needUpload)
+		{
+			SDL_UpdateTexture(texture_sharp_right_ptr, NULL, onscreen_surface_right->pixels, onscreen_surface_right->pitch);
+			texture_sharp_right_needUpload = 0;
+		}
+		SDL_RenderCopy(renderer_, texture_sharp_right_ptr, &srcRect, &dstRect);
+		Darken(dstRect); //Fluffy (MultiRoomRendering): Darken right screen
 
-	//Fluffy (MultiRoomRendering): Darken right screen
-	SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_BLEND);
-	SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 127);
-	SDL_RenderFillRect(renderer_, &dstRect);
-	SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_NONE);
+		if(dstRect.x + fullWidth < pop_window_width && texture_sharp_faraway_ptr) //There's still room left on the screen, so render a room that's two rooms away
+		{
+			dstRect.x += fullWidth;
+			SDL_RenderCopy(renderer_, texture_sharp_faraway_ptr, &srcRect, &dstRect);
+			Darken(dstRect);
+			dstRect.x -= fullWidth;
+		}
+
+		dstRect.x -= fullWidth;
+	}
 
 	//Fluffy (MultiRoomRendering): Left screen
-	SDL_UpdateTexture(texture_sharp_left, NULL, onscreen_surface_left->pixels, onscreen_surface_left->pitch);
-	dstRect.x -= fullWidth * 2;
-	SDL_RenderCopy(renderer_, texture_sharp_left, &srcRect, &dstRect);
+	if(dstRect.x >= 0)
+	{
+		dstRect.x -= fullWidth;
+		if(texture_sharp_left_needUpload)
+		{
+			SDL_UpdateTexture(texture_sharp_left_ptr, NULL, onscreen_surface_left->pixels, onscreen_surface_left->pitch);
+			texture_sharp_left_needUpload = 0;
+		}
+		SDL_RenderCopy(renderer_, texture_sharp_left_ptr, &srcRect, &dstRect);
+		Darken(dstRect); //Fluffy (MultiRoomRendering): Darken left screen
 
-	//Fluffy (MultiRoomRendering): Darken left screen
-	SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_BLEND);
-	SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 127);
-	SDL_RenderFillRect(renderer_, &dstRect);
-	SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_NONE);
+		if(dstRect.x >= 0 && texture_sharp_faraway_ptr) //There's still room left on the screen, so render a room that's two rooms away
+		{
+			dstRect.x -= fullWidth;
+			SDL_RenderCopy(renderer_, texture_sharp_faraway_ptr, &srcRect, &dstRect);
+			Darken(dstRect);
+		}
+	}
 
 	//Fluffy (MultiRoomRendering): Render hud at the bottom in the middle of the window
 	srcRect.x = 0;

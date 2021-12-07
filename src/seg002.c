@@ -316,6 +316,23 @@ void __pascal far follow_guard() {
 	saveshad();
 }
 
+static void FixRoomTexturePointers() //Fluffy (MultiRoomRendering): Update pointers for multi-room-rendering textures
+{
+	int j = 0;
+	for(int i = 0; i < 3; i++)
+	{
+		if(texture_sharp_faraway_ptr == texture_sharp_extra[i])
+			continue;
+		if(j == 0)
+			texture_sharp_left_ptr = texture_sharp_extra[i];
+		else if(j == 1)
+			texture_sharp_right_ptr = texture_sharp_extra[i];
+		j++;
+		if(j == 2)
+			break;
+	}
+}
+
 void SetCameraOffsetsForNewRoom(bool snapToPosition) //Fluffy (MultiRoomRendering): Check if there's a room to the left or right, and then based on the result, adjust camera position so we don't show the non-existant room
 {
 	float fullWidth = (320.0f / 240.0f) * (float) pop_window_height; //Replace 240 with 200 for incorrect aspect ratio with square pixels
@@ -327,9 +344,17 @@ void SetCameraOffsetsForNewRoom(bool snapToPosition) //Fluffy (MultiRoomRenderin
 	if(!snapToPosition)
 	{
 		if(next_room == level.roomlinks[drawn_room - 1].left)
+		{
 			renderPosOffsetPrevious -= fullWidth;
+			texture_sharp_faraway_ptr = texture_sharp_right_ptr;
+			FixRoomTexturePointers();
+		}
 		else if(next_room == level.roomlinks[drawn_room - 1].right)
+		{
 			renderPosOffsetPrevious += fullWidth;
+			texture_sharp_faraway_ptr = texture_sharp_left_ptr;
+			FixRoomTexturePointers();
+		}
 		else
 			verticalMovement = 1;
 	}
@@ -340,7 +365,10 @@ void SetCameraOffsetsForNewRoom(bool snapToPosition) //Fluffy (MultiRoomRenderin
 	if(!snapToPosition)
 		renderPosOffsetTimerStart = SDL_GetTicks();
 	if(snapToPosition || verticalMovement)
+	{
 		renderPosOffsetPrevious = renderPosOffsetTarget;
+		texture_sharp_faraway_ptr = 0;
+	}
 }
 
 // seg002:03C7
