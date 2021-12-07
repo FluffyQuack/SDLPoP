@@ -1081,9 +1081,9 @@ void __pascal far draw_game_frame() {
 	} else {
 		if (different_room) {
 			drawn_room = next_room;
-			if (custom->tbl_level_type[current_level]) {
+			/*if (custom->tbl_level_type[current_level]) { //Fluffy (MultiRoomRendering): Commented away as it happens during SwitchRoom()
 				gen_palace_wall_colors();
-			}
+			}*/
 			//redraw_screen(1); //Fluffy (MultiRoomRendering): Commented away since we always render screen below
 		} else {
 			if (need_redraw_because_flipped) {

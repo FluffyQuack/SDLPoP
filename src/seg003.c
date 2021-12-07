@@ -223,12 +223,14 @@ void __pascal far find_start_level_door() {
 void __pascal far draw_level_first() {
 	next_room = Kid.room;
 	check_the_end();
-	if (custom->tbl_level_type[current_level]) {
+	/*if (custom->tbl_level_type[current_level]) { //Fluffy (MultiRoomRendering): Commented this away as it happens during draw_game_frame()
 		gen_palace_wall_colors();
-	}
+	}*/
 	draw_rect(&screen_rect, 0);
 	show_level();
-	redraw_screen(0);
+	
+	draw_game_frame(); //Fluffy (MultiRoomRendering): Replace redraw_screen(0) call with this so we render adjacent rooms as well
+	
 	draw_kid_hp(hitp_curr, hitp_max);
 
 #ifdef USE_QUICKSAVE
