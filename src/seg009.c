@@ -2669,7 +2669,7 @@ float GetCameraOffset()
 		else
 		{
 			//Ease calculations are based on quad blend flibberflabflab equation
-			bool easeIn = 1, easeOut = 1;
+			bool easeIn = 1, easeOut = 0;
 			if(easeIn == 1 && easeOut == 0)
 				progress = 1.0f - pow(progress - 1, 2);
 			else if(easeIn == 0 && easeOut == 1)
