@@ -2693,10 +2693,13 @@ float GetCameraOffset()
 
 static void Darken(SDL_Rect dstRect) //Fluffy (MultiRoomRendering)
 {
-	SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_BLEND);
-	SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 127);
-	SDL_RenderFillRect(renderer_, &dstRect);
-	SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_NONE);
+	if(is_paused)
+	{
+		SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_BLEND);
+		SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 120);
+		SDL_RenderFillRect(renderer_, &dstRect);
+		SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_NONE);
+	}
 }
 
 void update_screen() {
