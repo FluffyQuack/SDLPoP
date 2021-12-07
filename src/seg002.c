@@ -316,6 +316,33 @@ void __pascal far follow_guard() {
 	saveshad();
 }
 
+void SetCameraOffsetsForNewRoom(bool snapToPosition) //Fluffy (MultiRoomRendering): Check if there's a room to the left or right, and then based on the result, adjust camera position so we don't show the non-existant room
+{
+	float fullWidth = (320.0f / 240.0f) * (float) pop_window_height; //Replace 240 with 200 for incorrect aspect ratio with square pixels
+	float gap = pop_window_width - fullWidth;
+	if(!snapToPosition)
+		GetCameraOffset();
+	bool verticalMovement = 0;
+	renderPosOffsetTarget = 0.0f;
+	if(!snapToPosition)
+	{
+		if(next_room == level.roomlinks[drawn_room - 1].left)
+			renderPosOffsetPrevious -= fullWidth;
+		else if(next_room == level.roomlinks[drawn_room - 1].right)
+			renderPosOffsetPrevious += fullWidth;
+		else
+			verticalMovement = 1;
+	}
+	if(level.roomlinks[next_room - 1].right == 0 && level.roomlinks[next_room - 1].left != 0)
+		renderPosOffsetTarget += gap / 2;
+	else if((level.roomlinks[next_room - 1].left == 0 && level.roomlinks[next_room - 1].right != 0) || (current_level == 14 && next_room == 1)) //We have a special check to ensure the final room in the final level isn't shown (since it doesn't mach up with the cutscene room)
+		renderPosOffsetTarget -= gap / 2;
+	if(!snapToPosition)
+		renderPosOffsetTimerStart = SDL_GetTicks();
+	if(snapToPosition || verticalMovement)
+		renderPosOffsetPrevious = renderPosOffsetTarget;
+}
+
 // seg002:03C7
 void __pascal far exit_room() {
 	short leave;
@@ -338,32 +365,8 @@ void __pascal far exit_room() {
 	savekid();
 	next_room = Char.room;
 
-	//Fluffy (MultiRoomRendering): Check if there's a room to the left or right, and then based on the result, adjust camera position so we don't show the non-existant room
-	float fullWidth = (320.0f / 240.0f) * (float) pop_window_height; //Replace 240 with 200 for incorrect aspect ratio with square pixels
-	float gap = pop_window_width - fullWidth;
-	GetCameraOffset();
-	renderPosOffsetTarget = 0.0f;
-	if(next_room == level.roomlinks[drawn_room - 1].left)
-	{
-		renderPosOffsetPrevious -= fullWidth;
-		if(level.roomlinks[next_room - 1].left == 0)
-			renderPosOffsetTarget -= gap / 2;
-	}
-	else if(next_room == level.roomlinks[drawn_room - 1].right)
-	{
-		renderPosOffsetPrevious += fullWidth;
-		if(level.roomlinks[next_room - 1].right == 0)
-			renderPosOffsetTarget += gap / 2;
-	}
-	else
-	{
-		if(level.roomlinks[next_room - 1].right == 0 && level.roomlinks[next_room - 1].left != 0)
-			renderPosOffsetTarget += gap / 2;
-		else if(level.roomlinks[next_room - 1].left == 0 && level.roomlinks[next_room - 1].right != 0)
-			renderPosOffsetTarget -= gap / 2;
-		renderPosOffsetPrevious = renderPosOffsetTarget;
-	}
-	renderPosOffsetTimerStart = SDL_GetTicks();
+	//Fluffy (MultiRoomRendering) 
+	SetCameraOffsetsForNewRoom(0);
 
 	if (Guard.direction == dir_56_none) return;
 	if (Guard.alive < 0 && Guard.sword == sword_2_drawn) {

@@ -150,16 +150,8 @@ void __pascal far do_startpos() {
 	}
 	next_room = Char.room = level.start_room;
 
-	//Fluffy (MultiRoomRendering): Define default camera position (TOOD: This is nearly identical to what we do in exit_room() so we should probably move this into its own function
-	float fullWidth = (320.0f / 240.0f) * (float) pop_window_height; //Replace 240 with 200 for incorrect aspect ratio with square pixels
-	float gap = pop_window_width - fullWidth;
-	renderPosOffsetTarget = 0.0f;
-	renderPosOffsetTimerStart = 0;
-	if(level.roomlinks[next_room - 1].right == 0 && level.roomlinks[next_room - 1].left != 0)
-		renderPosOffsetTarget += gap / 2;
-	else if(level.roomlinks[next_room - 1].left == 0 && level.roomlinks[next_room - 1].right != 0)
-		renderPosOffsetTarget -= gap / 2;
-	renderPosOffsetPrevious = renderPosOffsetTarget;
+	//Fluffy (MultiRoomRendering): Define default camera position
+	SetCameraOffsetsForNewRoom(1);
 
 	x = level.start_pos;
 	Char.curr_col = x % 10;

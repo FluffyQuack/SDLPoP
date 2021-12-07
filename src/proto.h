@@ -179,6 +179,7 @@ void __pascal far autocontrol_shadow_level4(void);
 void __pascal far autocontrol_shadow_level5(void);
 void __pascal far autocontrol_shadow_level6(void);
 void __pascal far autocontrol_shadow_level12(void);
+void SetCameraOffsetsForNewRoom(bool snapToPosition); //Fluffy (MultiRoomRendering)
 
 // SEG003.C
 void __pascal far init_game(int level);
