@@ -657,13 +657,7 @@ void __pascal far expired() {
 // seg001:0CCD
 void __pascal far load_intro(int which_imgs,cutscene_ptr_type func,int free_sounds) {
 
-	//Fluffy (MultiRoomRendering): Turn off everything related to multi-room rendering for cutscenes
-	renderPosOffsetPrevious = renderPosOffsetTarget = 0.0f;
-	SDL_FillRect(onscreen_surface_right, NULL, 0);
-	SDL_UpdateTexture(texture_sharp_right_ptr, NULL, onscreen_surface_right->pixels, onscreen_surface_right->pitch);
-	SDL_UpdateTexture(texture_sharp_left_ptr, NULL, onscreen_surface_right->pixels, onscreen_surface_right->pitch);
-	texture_sharp_right_needUpload = 0;
-	texture_sharp_left_needUpload = 0;
+	ResetMultiRoomRendering(); //Fluffy (MultiRoomRendering)
 
 	//Fluffy (MultiRoomRendering): Turn off all trobs
 	for (int index = 0; index < trobs_count; ++index)

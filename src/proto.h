@@ -78,6 +78,7 @@ void show_splash(void);
 void check_quick_op(void);
 void restore_room_after_quick_load(void);
 #endif // USE_QUICKSAVE
+void ResetMultiRoomRendering(); //Fluffy (MultiRoomRendering)
 
 // SEG001.C
 int __pascal far proc_cutscene_frame(int wait_frames);

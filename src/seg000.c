@@ -153,6 +153,16 @@ void far pop_main() {
 
 byte* level_var_palettes;
 
+void ResetMultiRoomRendering() //Fluffy (MultiRoomRendering)
+{
+	renderPosOffsetPrevious = renderPosOffsetTarget = 0.0f;
+	SDL_FillRect(onscreen_surface_right, NULL, 0);
+	SDL_UpdateTexture(texture_sharp_right_ptr, NULL, onscreen_surface_right->pixels, onscreen_surface_right->pitch);
+	SDL_UpdateTexture(texture_sharp_left_ptr, NULL, onscreen_surface_right->pixels, onscreen_surface_right->pitch);
+	texture_sharp_right_needUpload = 0;
+	texture_sharp_left_needUpload = 0;
+}
+
 // seg000:024F
 void __pascal far init_game_main() {
 	doorlink1_ad = /*&*/level.doorlinks1;
@@ -2067,6 +2077,8 @@ const rect_type rect_titles = {106,24,195,296};
 
 // seg000:17E6
 void __pascal far show_title() {
+	ResetMultiRoomRendering(); //Fluffy (MultiRoomRendering)
+
 	load_opt_sounds(sound_50_story_2_princess, sound_55_story_1_absence); // main theme, story, princess door
 	dont_reset_time = 0;
 	if(offscreen_surface) free_surface(offscreen_surface); // missing in original
