@@ -360,7 +360,9 @@ void SetCameraOffsetsForNewRoom(bool snapToPosition) //Fluffy (MultiRoomRenderin
 	}
 	if(level.roomlinks[next_room - 1].right == 0 && level.roomlinks[next_room - 1].left != 0)
 		renderPosOffsetTarget += gap / 2;
-	else if((level.roomlinks[next_room - 1].left == 0 && level.roomlinks[next_room - 1].right != 0) || (current_level == 14 && next_room == 1)) //We have a special check to ensure the final room in the final level isn't shown (since it doesn't mach up with the cutscene room)
+	else if((level.roomlinks[next_room - 1].left == 0 && level.roomlinks[next_room - 1].right != 0) 
+		|| (current_level == 14 && next_room == 1) //We have a special check to ensure the final room in the final level isn't shown (since it doesn't mach up with the cutscene room)
+		|| (current_level == 12 && next_room == 23)) //And another special check for final room in level 12 (this leads directly to an identical room in level 13, but it's impossible to make the transition entirely smooth)
 		renderPosOffsetTarget -= gap / 2;
 	if(!snapToPosition)
 		renderPosOffsetTimerStart = SDL_GetTicks();
