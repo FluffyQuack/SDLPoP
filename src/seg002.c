@@ -338,7 +338,7 @@ void SetCameraOffsetsForNewRoom(bool snapToPosition) //Fluffy (MultiRoomRenderin
 	float fullWidth = (320.0f / 240.0f) * (float) pop_window_height; //Replace 240 with 200 for incorrect aspect ratio with square pixels
 	float gap = pop_window_width - fullWidth;
 	if(!snapToPosition)
-		GetCameraOffset();
+		renderPosOffsetPrevious = GetCameraOffset();
 	bool verticalMovement = 0;
 	renderPosOffsetTarget = 0.0f;
 	if(!snapToPosition)
