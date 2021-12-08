@@ -201,10 +201,15 @@ void __pascal far set_start_pos() {
 		// Special event: level 7 falling entry
 		// level 7, room 17: show room below
 		goto_other_room(3);
-
-		//Fluffy (MultiRoomRendering): exit_room_timer behaviour has been changed with our new camera system, so we apply a timer here preventing the room from switching for a short time (this necessary due to the prince's y coordinate being very high, which would normally make the game want to change room further down, which would be wrong behaviour, so we give it time to overflow so it becomes a low value)
-		exit_room_timer = 10;
 	}
+
+	//Fluffy (MultiRoomRendering): exit_room_timer behaviour has been changed with our new camera system. In default POP code it's set to 2 during any room switch,
+	//							   but that doesn't work very well with our new camera system for several reasons (we want rooms to switch immediately, and it wasn't incompatible with other changes anyway).
+	//							   So we moved the value to be set at the start of a level. This is required for the starts of level 7 and 13 (but it's fine to set it for every level).
+	//                             It's necessary for level 7 due to the prince's y coordinate being very high, which would normally make the game want to change room further down, which would be wrong behaviour, so we give it time to overflow so it becomes a low value.
+	//							   It's necessary for level 13 because the prince starts by moving between rooms and intended behaviour is to only show the new room
+	exit_room_timer = 2;
+
 	savekid();
 }
 
