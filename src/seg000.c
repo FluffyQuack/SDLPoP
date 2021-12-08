@@ -423,6 +423,10 @@ void restore_room_after_quick_load() {
 	// Show the room where the prince is, even if the player moved the view away from it (with the H,J,U,N keys).
 	next_room = drawn_room = Kid.room;
 	load_room_links();
+
+	//Fluffy (MultiRoomRendering): Reset camera position
+	SetCameraOffsetsForNewRoom(1);
+
 	//draw_level_first();
 	//gen_palace_wall_colors();
 	is_guard_notice = 0; // prevent guard turning around immediately
@@ -461,6 +465,14 @@ int quick_load(void) {
 
 		stop_sounds();
 		draw_rect(&screen_rect, 0);
+
+		//Fluffy (MultiRoomRendering): Make all extra room textures black as well and reset camera position
+		SDL_FillRect(onscreen_surface_left, NULL, 0);
+		SDL_FillRect(onscreen_surface_right, NULL, 0);
+		texture_sharp_left_needUpload = 1;
+		texture_sharp_right_needUpload = 1;
+		renderPosOffsetPrevious = renderPosOffsetTarget = 0.0f;
+
 		update_screen();
 		delay_ticks(5); // briefly display a black screen as a visual cue
 
