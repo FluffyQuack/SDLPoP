@@ -705,6 +705,8 @@ void save_level_screenshot(bool want_extras);
 #endif
 
 // menu.c
+extern int active_settings_subsection; //Fluffy (MultiRoomRendering): Made this accessible to seg009.c
+extern int drawn_menu; //Fluffy (MultiRoomRendering): Made this accessible to seg009.c
 #ifdef USE_MENU
 void init_menu(void);
 void menu_scroll(int y);

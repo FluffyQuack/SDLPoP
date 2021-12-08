@@ -2696,7 +2696,15 @@ static void Darken(SDL_Rect dstRect) //Fluffy (MultiRoomRendering)
 	if(is_paused)
 	{
 		SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_BLEND);
-		SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 120);
+		unsigned char alpha = 120;
+		if(is_paused && drawn_menu)
+		{
+			if(active_settings_subsection > 7)
+				alpha = 255;
+			else
+				alpha = 220;
+		}
+		SDL_SetRenderDrawColor(renderer_, 0, 0, 0, alpha);
 		SDL_RenderFillRect(renderer_, &dstRect);
 		SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_NONE);
 	}
