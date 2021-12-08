@@ -2657,7 +2657,7 @@ void draw_overlay(void) {
 //Fluffy (MultiRoomRendering): Update the camera offset that's used for smooth camera movement between rooms
 float GetCameraOffset()
 {
-#define CAMERASPEED 500.0f //1000.0f means it takes 1 second to reach new position (lower number is faster)
+#define CAMERASPEED 800.0f //1000.0f means it takes 1 second to reach new position (lower number is faster)
 	float curOffset = renderPosOffsetPrevious;
 	if(renderPosOffsetPrevious != renderPosOffsetTarget)
 	{
@@ -2669,7 +2669,7 @@ float GetCameraOffset()
 		else
 		{
 			//Ease calculations are based on quad blend flibberflabflab equation
-			bool easeIn = 1, easeOut = 0;
+			bool easeIn = 1, easeOut = 1;
 			if(easeIn == 1 && easeOut == 0)
 				progress = 1.0f - pow(progress - 1, 2);
 			else if(easeIn == 0 && easeOut == 1)
@@ -3747,10 +3747,13 @@ void __pascal do_simple_wait(int timer_index) {
 	if ((replaying && skipping_replay) || is_validate_mode) return;
 #endif
 	//update_screen(); //Fluffy (MultiRoomRendering): Commented this away since we now do update_screen below
+	bool first = 1; //Fluffy (MultiRoomRendering)
 	while (! has_timer_stopped(timer_index)) {
+		if(first || renderPosOffsetPrevious != renderPosOffsetTarget)
+			update_screen(); //Fluffy (MultiRoomRendering): Calling this so camera can smoothly move between rooms inbetween the game's 12fps tick rate, though it's only necessary to call this while the camera is moving
 		SDL_Delay(1);
 		process_events();
-		update_screen(); //Fluffy (MultiRoomRendering): Calling this so camera can smoothly move between rooms inbetween the game's 12fps tick rate
+		first = 0;
 	}
 }
 
