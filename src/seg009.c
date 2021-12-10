@@ -2739,6 +2739,22 @@ void update_screen() {
 	//Fluffy (MultiRoomRendering): Update camera's exact position
 	float curOffset = GetCameraOffset();
 
+	//Experimenting with in-room scrolling (doesn't work very well since the kid coordinate can jitter too much, simply ducking makes the value move back and forth. Base it on current tile the kid is on instead?)
+	/*{
+#define MARGIN 58
+#define WIDTH 140
+		int kidX = 0;
+		if(Kid.x < MARGIN)
+			kidX = MARGIN;
+		else if(Kid.x >= WIDTH + MARGIN)
+			kidX = WIDTH - 1;
+		else
+			kidX = Kid.x - MARGIN;
+		kidX -= WIDTH / 2;
+		kidX -= 10;
+		curOffset -= kidX;
+	}*/
+
 	//Fluffy (MultiRoomRendering): Render middle (aka main) screen
 	SDL_Rect srcRect, dstRect;
 	float fullWidth = (320.0f / 240.0f) * (float) pop_window_height; //Replace 240 with 200 for incorrect aspect ratio with square pixels
