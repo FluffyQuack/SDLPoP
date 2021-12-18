@@ -2472,6 +2472,13 @@ void init_scaling(void) {
 	// Don't crash in validate mode.
 	if (renderer_ == NULL) return;
 
+	//Fluffy (MultiRoomRendering)
+	if(texture_overlay == NULL)
+	{
+		texture_overlay = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, 320, 200);
+		SDL_SetTextureBlendMode(texture_overlay, SDL_BLENDMODE_BLEND);
+	}
+
 	if (texture_sharp == NULL) {
 		texture_sharp = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STREAMING, 320, 200);
 
@@ -2754,28 +2761,10 @@ float GetCameraOffset()
 	return curOffset;
 }
 
-static void Darken(SDL_Rect dstRect) //Fluffy (MultiRoomRendering)
-{
-	if(is_paused)
-	{
-		SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_BLEND);
-		unsigned char alpha = 120;
-		if(is_paused && drawn_menu)
-		{
-			if(active_settings_subsection > 7)
-				alpha = 255;
-			else
-				alpha = 220;
-		}
-		SDL_SetRenderDrawColor(renderer_, 0, 0, 0, alpha);
-		SDL_RenderFillRect(renderer_, &dstRect);
-		SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_NONE);
-	}
-}
-
 void update_screen() {
 	draw_overlay();
-	SDL_Surface* surface = get_final_surface();
+	//SDL_Surface* surface = get_final_surface(); //Fluffy (MultiRoomRendering): Commented this out as we always want to use the surface with ingame graphics
+	SDL_Surface *surface = onscreen_surface_; //Fluffy (MultiRoomRendering)
 	init_scaling();
 	if (scaling_type == 1) {
 		// Make "fuzzy pixels" like DOSBox does:
@@ -2797,6 +2786,11 @@ void update_screen() {
 	} else {
 		SDL_UpdateTexture(target_texture, NULL, surface->pixels, surface->pitch);
 	}
+
+	//Fluffy (MultiRoomRendering): Copy overlay to texture
+	if(is_menu_shown)
+		SDL_UpdateTexture(texture_overlay, NULL, overlay_surface->pixels, overlay_surface->pitch);
+
 	SDL_RenderClear(renderer_);
 
 	//Fluffy (MultiRoomRendering): Update camera's exact position
@@ -2842,13 +2836,11 @@ void update_screen() {
 			texture_sharp_right_needUpload = 0;
 		}
 		SDL_RenderCopy(renderer_, texture_sharp_right_ptr, &srcRect, &dstRect);
-		Darken(dstRect); //Fluffy (MultiRoomRendering): Darken right screen
 
 		if(dstRect.x + fullWidth < pop_window_width && texture_sharp_faraway_ptr) //There's still room left on the screen, so render a room that's two rooms away
 		{
 			dstRect.x += fullWidth;
 			SDL_RenderCopy(renderer_, texture_sharp_faraway_ptr, &srcRect, &dstRect);
-			Darken(dstRect);
 			dstRect.x -= fullWidth;
 		}
 
@@ -2865,13 +2857,11 @@ void update_screen() {
 			texture_sharp_left_needUpload = 0;
 		}
 		SDL_RenderCopy(renderer_, texture_sharp_left_ptr, &srcRect, &dstRect);
-		Darken(dstRect); //Fluffy (MultiRoomRendering): Darken left screen
 
 		if(dstRect.x >= 0 && texture_sharp_faraway_ptr) //There's still room left on the screen, so render a room that's two rooms away
 		{
 			dstRect.x -= fullWidth;
 			SDL_RenderCopy(renderer_, texture_sharp_faraway_ptr, &srcRect, &dstRect);
-			Darken(dstRect);
 		}
 	}
 
@@ -2885,6 +2875,34 @@ void update_screen() {
 	dstRect.w = fullWidth;
 	dstRect.h = (pop_window_height / 200) * 8;
 	SDL_RenderCopy(renderer_, target_texture, &srcRect, &dstRect);
+
+	//Fluffy (MultiRoomRendering): Render overlay in the middle of the screen
+	if(is_menu_shown)
+	{
+		//Darken the entire screen
+		SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_BLEND);
+		unsigned char alpha = 120;
+		if(is_paused && drawn_menu)
+		{
+			if(active_settings_subsection > 7)
+				alpha = 255;
+			else
+				alpha = 220;
+		}
+		SDL_SetRenderDrawColor(renderer_, 0, 0, 0, alpha);
+		SDL_RenderFillRect(renderer_, NULL);
+		SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_NONE);
+
+		srcRect.x = 0;
+		srcRect.y = 0;
+		srcRect.w = 320;
+		srcRect.h = 200;
+		dstRect.x = gap / 2;
+		dstRect.y = 0;
+		dstRect.w = fullWidth;
+		dstRect.h = pop_window_height;
+		SDL_RenderCopy(renderer_, texture_overlay, &srcRect, &dstRect);
+	}
 
 	SDL_RenderPresent(renderer_);
 }

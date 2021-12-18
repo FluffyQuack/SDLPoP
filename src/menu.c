@@ -1219,7 +1219,7 @@ void draw_pause_menu_item(pause_menu_item_type* item, rect_type* parent, int* y_
 }
 
 void draw_pause_menu(void) {
-	pause_menu_alpha = 120;
+	pause_menu_alpha = 0; //Fluffy (MultiRoomRendering): Set to 0 as we apply the darkening via SDL instead
 	draw_rect_with_alpha(&screen_rect, color_0_black, pause_menu_alpha);
 	draw_rect_with_alpha(&rect_bottom_text, color_0_black, 0); // Transparent so that the text "GAME PAUSED" is visible.
 	rect_type pause_rect_outer = {0, 110, 192, 210};
@@ -1633,7 +1633,7 @@ void draw_settings_area(settings_area_type* settings_area) {
 
 void draw_settings_menu(void) {
 	settings_area_type* settings_area = get_settings_area(active_settings_subsection);
-	pause_menu_alpha = (settings_area == NULL) ? 220 : 255;
+	pause_menu_alpha = 0; //Fluffy (MultiRoomRendering): Set to 0 as we apply the darkening via SDL instead
 	draw_rect_with_alpha(&screen_rect, color_0_black, pause_menu_alpha);
 
 	rect_type pause_rect_outer = {0, 10, 192, 80};
