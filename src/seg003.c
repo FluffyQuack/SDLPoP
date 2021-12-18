@@ -261,7 +261,7 @@ void __pascal far redraw_screen(int drawing_different_room) {
 //#ifdef USE_DARK_TRANSITION
 //		// Briefly show a dark screen when changing rooms, like in the original game.
 //		update_screen();
-//		SDL_Delay(100);
+//		SDL_Delay_NetworkUpdate(100); //(Fluffy (Multiplayer): Replaced this call so we can also do a network update)
 //#endif
 //	}
 

@@ -127,6 +127,7 @@ void __pascal far hof_read(void);
 void __pascal far show_hof_text(rect_type far *rect,int x_align,int y_align, const char *text);
 int __pascal far fade_in_1(void);
 int __pascal far fade_out_1(void);
+void SDL_Delay_NetworkUpdate(unsigned int delay); //Fluffy (Multiplayer)
 
 // SEG002.C
 void __pascal far do_init_shad(const byte *source,int seq_index);
@@ -555,7 +556,7 @@ const char* __pascal far check_param(const char *param);
 int __pascal far pop_wait(int timer_index,int time);
 dat_type *__pascal open_dat(const char *file, int optional);
 void __pascal far set_loaded_palette(dat_pal_type far *palette_ptr);
-chtab_type* __pascal load_sprites_from_file(int resource,int palette_bits, int quit_on_error);
+chtab_type* __pascal load_sprites_from_file(int resource,int palette_bits, int quit_on_error, int chtab_id);
 void __pascal far free_chtab(chtab_type *chtab_ptr);
 image_type* decode_image(image_data_type* image_data, dat_pal_type* palette);
 image_type*far __pascal far load_image(int index, dat_pal_type* palette);

@@ -19,6 +19,7 @@ The authors of this program may be contacted at https://forum.princed.org
 */
 
 #include "common.h"
+#include "Network\Network-Intermediate.h" //Fluffy (Multiplayer)
 
 #ifndef _MSC_VER // unistd.h does not exist in the Windows SDK.
 #include <unistd.h>
@@ -60,6 +61,14 @@ rect_type hof_rects[MAX_HOF_COUNT] = {
 {140,   72,  152,  248},
 {154,   72,  166,  248},
 };
+
+//Fluffy (Multiplayer)
+void SDL_Delay_NetworkUpdate(unsigned int delay)
+{
+	Network_Intermediate_SendPrinceData(Kid.frame, Kid.x, Kid.y, Kid.direction, Kid.room, Kid.alive, Kid.curr_seq, Kid.sword, current_level, Kid.curr_col, Kid.curr_row, Kid.action, Kid.fall_x, Kid.fall_y, Kid.repeat, Kid.charid);
+	Network_Update();
+	SDL_Delay(delay);
+}
 
 // seg001:0004
 int __pascal far proc_cutscene_frame(int wait_frames) {
@@ -554,7 +563,7 @@ void delay_ticks(Uint32 ticks) {
 #ifdef USE_REPLAY
 	if (replaying && skipping_replay) return;
 #endif
-	SDL_Delay(ticks *(1000/60));
+	SDL_Delay_NetworkUpdate(ticks *(1000/60)); //(Fluffy (Multiplayer): Replaced this call so we can also do a network update)
 }
 
 // seg001:0981

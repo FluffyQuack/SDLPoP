@@ -180,9 +180,9 @@ void __pascal far init_game_main() {
 		level_var_palettes = load_from_opendats_alloc(20, "bin", NULL, NULL);
 	}
 	// PRINCE.DAT: sword
-	chtab_addrs[id_chtab_0_sword] = load_sprites_from_file(700, 1<<2, 1);
+	chtab_addrs[id_chtab_0_sword] = load_sprites_from_file(700, 1<<2, 1, id_chtab_0_sword); //Fluffy (Multiplayer): Added last argument
 	// PRINCE.DAT: flame, sword on floor, potion
-	chtab_addrs[id_chtab_1_flameswordpotion] = load_sprites_from_file(150, 1<<3, 1);
+	chtab_addrs[id_chtab_1_flameswordpotion] = load_sprites_from_file(150, 1<<3, 1, id_chtab_1_flameswordpotion); //Fluffy (Multiplayer): Added last argument
 	close_dat(dathandle);
 #ifdef USE_LIGHTING
 	init_lighting();
@@ -1876,7 +1876,7 @@ void __pascal far load_chtab_from_file(int chtab_id,int resource,const char near
 	dat_type* dathandle;
 	if (chtab_addrs[chtab_id] != NULL) return;
 	dathandle = open_dat(filename, 'G');
-	chtab_addrs[chtab_id] = load_sprites_from_file(resource, palette_bits, 1);
+	chtab_addrs[chtab_id] = load_sprites_from_file(resource, palette_bits, 1, chtab_id); //Fluffy (Multiplayer): Carry over chtab_id
 	close_dat(dathandle);
 }
 
@@ -1884,7 +1884,7 @@ void __pascal far load_chtab_from_file(int chtab_id,int resource,const char near
 void __pascal far free_all_chtabs_from(int first) {
 	word chtab_id;
 	free_peels();
-	for (chtab_id = first; chtab_id < 10; ++chtab_id) {
+	for (chtab_id = first; chtab_id < id_chtab_num; ++chtab_id) { //Fluffy (Multiplayer): Replaced hardcoded chtab maximum with enum reference
 		if (chtab_addrs[chtab_id]) {
 			free_chtab(chtab_addrs[chtab_id]);
 			chtab_addrs[chtab_id] = NULL;
@@ -2228,7 +2228,7 @@ void __pascal far transition_ltr() {
 				last_transition_counter = current_counter;
 				break; // Proceed to the next frame.
 			} else {
-				SDL_Delay(1);
+				SDL_Delay_NetworkUpdate(1); //(Fluffy (Multiplayer): Replaced this call so we can also do a network update)
 			}
 		}
 
@@ -2370,7 +2370,7 @@ void __pascal far clear_screen_and_sounds() {
 	is_ending_sequence = false; // added
 	peels_count = 0;
 	// should these be freed?
-	for (index = 2; index < 10; ++index) {
+	for (index = 2; index < id_chtab_num; ++index) { //Fluffy (Multiplayer): Replaced hardcoded chtab maximum with enum reference
 		if (chtab_addrs[index]) {
 			// Original code does not free these?
 			free_chtab(chtab_addrs[index]);
@@ -2451,8 +2451,8 @@ void __pascal far free_optsnd_chtab() {
 void __pascal far load_title_images(int bgcolor) {
 	dat_type* dathandle;
 	dathandle = open_dat("TITLE.DAT", 'G');
-	chtab_title40 = load_sprites_from_file(40, 1<<11, 1);
-	chtab_title50 = load_sprites_from_file(50, 1<<12, 1);
+	chtab_title40 = load_sprites_from_file(40, 1<<11, 1, -1); //Fluffy (Multiplayer): Added last argument
+	chtab_title50 = load_sprites_from_file(50, 1<<12, 1, -1); //Fluffy (Multiplayer): Added last argument
 	close_dat(dathandle);
 	if (graphics_mode == gmMcgaVga) {
 		// background of text frame

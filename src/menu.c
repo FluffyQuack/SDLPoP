@@ -1810,7 +1810,7 @@ void draw_confirmation_dialog(int which_dialog, const char* text) {
 			update_screen();
 		}
 
-		SDL_Delay(1); // Prevent 100% cpu usage.
+		SDL_Delay_NetworkUpdate(1); // Prevent 100% cpu usage. (Fluffy (Multiplayer): Replaced this call so we can also do a network update)
 
 	}
 	current_dialog_box = 0;
@@ -1868,7 +1868,7 @@ void draw_select_level_dialog(void) {
 			textstate.ptr_font = saved_font;
 		}
 
-		SDL_Delay(1); // Prevent 100% cpu usage.
+		SDL_Delay_NetworkUpdate(1); // Prevent 100% cpu usage. (Fluffy (Multiplayer): Replaced this call so we can also do a network update)
 
 	}
 	clear_menu_controls();
@@ -1928,7 +1928,7 @@ void draw_menu() {
 			need_full_menu_redraw_count = 2;
 		} else {
 			if (need_full_menu_redraw_count == 0) {
-				SDL_Delay(1);
+				SDL_Delay_NetworkUpdate(1); //(Fluffy (Multiplayer): Replaced this call so we can also do a network update)
 				continue; // Don't redraw if there is no input to process (save CPU cycles).
 			}
 		}

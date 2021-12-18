@@ -67,7 +67,7 @@ extern short start_level INIT(= -1);
 // data:4CE6
 extern byte * guard_palettes;
 // data:4338
-extern chtab_type *chtab_addrs[10];
+extern chtab_type *chtab_addrs[id_chtab_num_withextras]; //Fluffy (Multiplayer): Replaced hardcoded size with enum reference
 
 
 #ifdef USE_COPYPROT
@@ -193,7 +193,7 @@ extern rect_type drects[30];
 // data:4CB8
 extern sbyte obj_direction;
 // data:2588
-extern const byte chtab_flip_clip[10] INIT(= {1,0,1,1,1,1,0,0,0,0});
+extern const byte chtab_flip_clip[id_chtab_num] INIT(= {1,0,1,1,1,1,0,0,0,0}); //Fluffy (Multiplayer): Replaced the hardcoded max of the array
 // data:42A6
 extern short obj_clip_left;
 // data:42C6
@@ -205,7 +205,7 @@ extern short obj_clip_bottom;
 // data:34D2
 extern wipetable_type wipetable[300];
 // data:2592
-extern const byte chtab_shift[10] INIT(= {0,1,0,0,0,0,1,1,1,0});
+extern const byte chtab_shift[id_chtab_num] INIT(= {0,1,0,0,0,0,1,1,1,0}); //Fluffy (Multiplayer): Replaced the hardcoded max of the array
 // data:4354
 extern word need_drects;
 // data:4CC2
@@ -936,6 +936,9 @@ extern byte always_use_original_graphics;
 extern float renderPosOffsetPrevious;
 extern float renderPosOffsetTarget;
 extern unsigned int renderPosOffsetTimerStart;
+
+//Fluffy (Multiplayer)
+extern int currentKidCharTable; //Current kid sprite data we're using for drawing
 
 #undef INIT
 #undef extern

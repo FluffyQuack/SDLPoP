@@ -19,6 +19,8 @@ The authors of this program may be contacted at https://forum.princed.org
 */
 
 #include "common.h"
+#include "Network/Network-Intermediate.h"
+#include "Print.h"
 
 // data:27E0
 add_table_type ptr_add_table = add_backtable;
@@ -71,6 +73,8 @@ short drawn_col;
 byte tile_left;
 // data:4CCC
 byte modifier_left;
+
+static int currentlyAddingPrince = 0; //Fluffy (Multiplayer)
 
 // seg008:0006
 void __pascal far redraw_room() {
@@ -790,16 +794,16 @@ int __pascal far get_loose_frame(byte modifier) {
 // Get an image, with index and NULL checks.
 image_type* get_image(short chtab_id, int id) {
 	if (chtab_id < 0 || chtab_id > COUNT(chtab_addrs)) {
-		printf("Tried to use chtab %d not in 0..%d\n", chtab_id, (int)COUNT(chtab_addrs));
+		PrintToConsole("Tried to use chtab %d not in 0..%d\n", chtab_id, (int)COUNT(chtab_addrs));
 		return NULL;
 	}
 	chtab_type* chtab = chtab_addrs[chtab_id];
 	if (chtab == NULL) {
-		printf("Tried to use null chtab %d\n", chtab_id);
+		PrintToConsole("Tried to use null chtab %d\n", chtab_id);
 		return NULL;
 	}
 	if (id < 0 || id >= chtab->n_images) {
-		if (id != 255) printf("Tried to use image %d of chtab %d, not in 0..%d\n", id, chtab_id, chtab->n_images-1);
+		if (id != 255) PrintToConsole("Tried to use image %d of chtab %d, not in 0..%d\n", id, chtab_id, chtab->n_images-1);
 		return NULL;
 	}
 	return chtab->images[id];
@@ -882,7 +886,13 @@ int __pascal far add_midtable(short chtab_id, int id, sbyte xh, sbyte xl, int yb
 		return 0;
 	}
 	midtable_item->y = ybottom - image->h/*height*/ + 1;
-	if (obj_direction == dir_0_right && chtab_flip_clip[chtab_id] != 0) {
+
+	//Fluffy (Multiplayer): For network kid assets, then use the same chtab_flip_clip value as normal kid asset
+	int flipId = chtab_id;
+	if(flipId >= id_chtab_network_kid && flipId <= id_chtab_network_kid_last)
+		flipId = id_chtab_2_kid;
+
+	if (obj_direction == dir_0_right && chtab_flip_clip[flipId] != 0) {
 		blit += 0x80;
 	}
 	midtable_item->blit = blit;
@@ -970,9 +980,14 @@ void __pascal far draw_back_fore(int which_table,int index) {
 		table_entry = &foretable[index];
 	}
 	image = mask = get_image(table_entry->chtab_id, table_entry->id);
-	/*
+
+	//Fluffy (Multiplayer): For network kid assets, then use the same chtab_shift value as normal kid asset
+	/*int shiftId = table_entry->chtab_id;
+	if(shiftId >= id_chtab_network_kid && shiftId <= id_chtab_network_kid_last)
+		shiftId = id_chtab_2_kid;
+
 	if ((graphics_mode == gmCga || graphics_mode == gmHgaHerc) &&
-		chtab_shift[table_entry->chtab_id] == 0) {
+		chtab_shift[shiftId] == 0) {
 		chtab_type* chtab = chtab_addrs[table_entry->chtab_id];
 		mask = chtab->images[chtab->n_images / 2 + table_entry->id];
 	}
@@ -1036,8 +1051,13 @@ void __pascal far draw_mid(int index) {
 	image_id = midtable_entry->id;
 	chtab_id = midtable_entry->chtab_id;
 	image = mask = get_image(chtab_id, image_id);
-	/*
-	if ((graphics_mode == gmCga || graphics_mode == gmHgaHerc) && chtab_shift[chtab_id]) {
+
+	//Fluffy (Multiplayer): For network kid assets, then use the same chtab_shift value as normal kid asset
+	/*int shiftId = chtab_id;
+	if(shiftId >= id_chtab_network_kid && shiftId <= id_chtab_network_kid_last)
+		shiftId = id_chtab_2_kid;
+
+	if ((graphics_mode == gmCga || graphics_mode == gmHgaHerc) && chtab_shift[shiftId]) {
 		mask = chtab_addrs[chtab_id]->images[image_id + chtab_addrs[chtab_id]->n_images / 2];
 	}
 	*/
@@ -1049,7 +1069,12 @@ void __pascal far draw_mid(int index) {
 		blit &= 0x7F;
 	}
 
-	if (chtab_flip_clip[chtab_id]) {
+	//Fluffy (Multiplayer): For network kid assets, then use the same chtab_flip_clip value as normal kid asset
+	int flipId = chtab_id;
+	if(flipId >= id_chtab_network_kid && flipId <= id_chtab_network_kid_last)
+		flipId = id_chtab_2_kid;
+
+	if (chtab_flip_clip[flipId]) {
 		set_clip_rect(&midtable_entry->clip);
 		if (chtab_id != id_chtab_0_sword) {
 			xpos = calc_screen_x_coord(xpos);
@@ -1068,7 +1093,7 @@ void __pascal far draw_mid(int index) {
 	//printf("Midtable: drawing (chtab %d, image %d) at (x=%d, y=%d)\n",chtab_id,image_id,xpos,ypos); // debug
 	draw_image(image, mask, xpos, ypos, blit);
 
-	if (chtab_flip_clip[chtab_id]) {
+	if (chtab_flip_clip[flipId]) {
 		reset_clip_rect();
 	}
 	if (need_free_image) {
@@ -1684,13 +1709,56 @@ void __pascal far draw_people() {
 
 // seg008:22A2
 void __pascal far draw_kid() {
+	/*
 	if (Kid.room != 0 && Kid.room == drawn_room) {
 		add_kid_to_objtable();
 		if (hitp_delta < 0) {
 			draw_hurt_splash();
 		}
 		add_sword_to_objtable();
+	}*/
+
+	//Fluffy (Multiplayer): Render the prince of every network client (including ourself)
+	currentlyAddingPrince = 0;
+	char_type kidBackup = Kid;
+	for(int i = 0; i < MAXCLIENTS; i++) //We may seem to go with a weird order here, but that's to ensure correct render order since we offset render position slightly for each player
+	{
+		unsigned short remote_current_level;
+
+		if(currentlyAddingPrince == 3) //We swap the positions of 3 and 0 so our local player always get the default "middle lane" position
+		{
+			Kid = kidBackup;
+			remote_current_level = current_level;
+			currentKidCharTable = id_chtab_2_kid;
+		}
+		else 
+		{
+			int networkPlayerNum = currentlyAddingPrince == 0 ? 3 : currentlyAddingPrince;
+			if(!Network_Intermediate_GetPrinceData(networkPlayerNum, &Kid.frame, &Kid.x, &Kid.y, &Kid.direction, &Kid.room, &Kid.alive, &Kid.curr_seq, &Kid.sword, &remote_current_level, &Kid.curr_col, &Kid.curr_row, &Kid.action, &Kid.fall_x, &Kid.fall_y, &Kid.repeat, &Kid.charid))
+				goto skip;
+			currentKidCharTable = id_chtab_network_kid + networkPlayerNum;
+			if(chtab_addrs[id_chtab_network_kid + networkPlayerNum] == NULL)
+				load_chtab_from_file(id_chtab_network_kid + networkPlayerNum, 400, "KID.DAT", 1<<7); //Fluffy (Multiplayer): Load additional kid image data (TODO: We need to unload these when we stop network, quit, or as network players leave
+		}
+
+		//TODO: We need to draw kid if he's in the nearby room too
+
+		if (Kid.room != 0 && Kid.room == drawn_room && remote_current_level == current_level) {
+			add_kid_to_objtable();
+			if (hitp_delta < 0) {
+				draw_hurt_splash();
+			}
+			add_sword_to_objtable();
+		}
+
+	skip:
+		currentlyAddingPrince += 6;
+		if(currentlyAddingPrince >= MAXCLIENTS)
+			currentlyAddingPrince -= (MAXCLIENTS - 1);
 	}
+	currentlyAddingPrince = -1;
+	Kid = kidBackup;
+	currentKidCharTable = id_chtab_2_kid;
 }
 
 // seg008:22C9
@@ -1759,6 +1827,15 @@ void __pascal far add_objtable(byte obj_type) {
 	entry_addr->obj_type = obj_type;
 	x_to_xh_and_xl(obj_x, &entry_addr->xh, &entry_addr->xl);
 	entry_addr->y = obj_y;
+
+	//Fluffy (Multiplayer): We adjust the position of network players here slightly so it looks like they're higher up or lower down on tiles compared to the local player (local player is always on the default "middle" lane)
+	//TODO: After we changing xl and xh the right way?
+	if(currentlyAddingPrince != -1)
+	{
+		entry_addr->y += (currentlyAddingPrince % 6) - 3;
+		entry_addr->xl -= ((currentlyAddingPrince % 6) - 3) * 2;
+	}
+
 	entry_addr->clip.top = obj_clip_top;
 	entry_addr->clip.bottom = obj_clip_bottom;
 	entry_addr->clip.left = obj_clip_left;
@@ -1781,7 +1858,7 @@ void __pascal far mark_obj_tile_redraw(int index) {
 // seg008:2448
 void __pascal far load_frame_to_obj() {
 	word chtab_base;
-	chtab_base = id_chtab_2_kid;
+	chtab_base = currentKidCharTable; //Fluffy (Multiplayer)
 	reset_obj_clip();
 	load_frame();
 	obj_direction = Char.direction;

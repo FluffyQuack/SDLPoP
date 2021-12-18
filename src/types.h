@@ -18,6 +18,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 The authors of this program may be contacted at https://forum.princed.org
 */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef TYPES_H
 #define TYPES_H
 
@@ -158,16 +162,24 @@ enum tiles {
 };
 
 enum chtabs {
-	id_chtab_0_sword = 0,
-	id_chtab_1_flameswordpotion = 1,
-	id_chtab_2_kid = 2,
-	id_chtab_3_princessinstory = 3,
-	id_chtab_4_jaffarinstory_princessincutscenes = 4,
-	id_chtab_5_guard = 5,
-	id_chtab_6_environment = 6,
-	id_chtab_7_environmentwall = 7,
-	id_chtab_8_princessroom = 8,
-	id_chtab_9_princessbed = 9
+	id_chtab_0_sword,
+	id_chtab_1_flameswordpotion,
+	id_chtab_2_kid,
+	id_chtab_3_princessinstory,
+	id_chtab_4_jaffarinstory_princessincutscenes,
+	id_chtab_5_guard,
+	id_chtab_6_environment,
+	id_chtab_7_environmentwall,
+	id_chtab_8_princessroom,
+	id_chtab_9_princessbed,
+
+	id_chtab_num, //Fluffy (Multiplayer): Num including only stock assets
+
+	//Fluffy (Multiplayer): We load unique image data for each player so they can have different colours
+	id_chtab_network_kid,
+	id_chtab_network_kid_last = id_chtab_network_kid + 127,
+
+	id_chtab_num_withextras //Fluffy (Multiplayer): Num including stock assets + network kids
 };
 
 enum blitters {
@@ -1347,4 +1359,8 @@ typedef struct directory_listing_type directory_listing_type;
 
 #define FEATHER_FALL_LENGTH 18.75
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif

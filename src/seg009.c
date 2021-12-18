@@ -21,6 +21,7 @@ The authors of this program may be contacted at https://forum.princed.org
 #include "common.h"
 #include <time.h>
 #include <errno.h>
+#include "Print.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -455,7 +456,7 @@ void __pascal far set_loaded_palette(dat_pal_type far *palette_ptr) {
 word chtab_palette_bits = 1;
 
 // seg009:104E
-chtab_type* __pascal load_sprites_from_file(int resource,int palette_bits, int quit_on_error) {
+chtab_type* __pascal load_sprites_from_file(int resource,int palette_bits, int quit_on_error, int chtab_id) { //Fluffy (Multiplayer): Added the chtab_id argument
 	int i;
 	int n_images = 0;
 	//int has_palette_bits = 1;
@@ -495,8 +496,70 @@ chtab_type* __pascal load_sprites_from_file(int resource,int palette_bits, int q
 	chtab = (chtab_type*) malloc(alloc_size);
 	memset(chtab, 0, alloc_size);
 	chtab->n_images = n_images;
+
+	//Fluffy (Multiplayer): Get colour for this kid
+#define DEFAULTR 252
+#define DEFAULTG 252
+#define DEFAULTB 216
+#define DEFAULTR_DARKER 216
+#define DEFAULTG_DARKER 184
+#define DEFAULTB_DARKER 160
+	unsigned char r = DEFAULTR, g = DEFAULTG, b = DEFAULTB;
+	if(chtab_id >= id_chtab_network_kid || chtab_id == id_chtab_2_kid)
+	{
+		if(currentKidCharTable >= id_chtab_network_kid)
+			Network_Intermediate_GetPlayerColours(currentKidCharTable - id_chtab_network_kid, &r, &g, &b);
+		else
+			Network_Intermediate_GetPlayerColours(0, &r, &g, &b);
+	}
+
 	for (i = 1; i <= n_images; i++) {
 		SDL_Surface* image = load_image(resource + i, pal_ptr);
+
+		//Fluffy (Multiplayer): Alter kid image data for extra kids
+		if(chtab_id >= id_chtab_network_kid || chtab_id == id_chtab_2_kid)
+		{
+			unsigned char *imgData = image->pixels;
+			int bytesPerPixel = image->format->BytesPerPixel;
+			//PrintToConsole("bytesPerPixel: %i\n", bytesPerPixel);
+			if(r != DEFAULTR || g != DEFAULTG || b != DEFAULTB)
+			{			
+				if(bytesPerPixel == 4)
+				{			
+					for(unsigned int k = 0; k < image->w * image->h * bytesPerPixel; k += 4)
+					{
+						if(imgData[k + 0] == DEFAULTR && imgData[k + 1] == DEFAULTG && imgData[k + 2] == DEFAULTB)
+						{
+							imgData[k + 0] = r;
+							imgData[k + 1] = g;
+							imgData[k + 2] = b;
+						}
+						else if(imgData[k + 0] == DEFAULTR_DARKER && imgData[k + 1] == DEFAULTG_DARKER && imgData[k + 2] == DEFAULTB_DARKER)
+						{
+							/*imgData[k + 0] = r / 1.166666666666667;
+							imgData[k + 1] = g / 1.369565217391304;
+							imgData[k + 2] = b / 1.35;*/
+
+							imgData[k + 0] = r / 1.369565217391304;
+							imgData[k + 1] = g / 1.369565217391304;
+							imgData[k + 2] = b / 1.369565217391304;
+						}
+					}
+				}
+				else if(bytesPerPixel == 1)
+				{			
+					for(unsigned int k = 0; k < image->h * image->pitch; k++)
+					{
+						//Change white outfit to red
+						if(imgData[k] == 7)
+							imgData[k] = 12;
+						else if(imgData[k] == 15)
+							imgData[k] = 9;
+					}
+				}
+			}
+		}
+
 //		if (image == NULL) printf(" failed");
 		if (image != NULL) {
 
@@ -1121,7 +1184,7 @@ extern byte hc_small_font_data[];
 void load_font(void) {
 	// Try to load font from a file.
 	dat_type* dathandle = open_dat("font", 1);
-	hc_font.chtab = load_sprites_from_file(1000, 1<<1, 0);
+	hc_font.chtab = load_sprites_from_file(1000, 1<<1, 0, -1); //Fluffy (Multiplayer): Added last argument
 	close_dat(dathandle);
 	if (hc_font.chtab == NULL) {
 		// Use built-in font.
@@ -3775,7 +3838,7 @@ void __pascal do_simple_wait(int timer_index) {
 	while (! has_timer_stopped(timer_index)) {
 		if(first || renderPosOffsetPrevious != renderPosOffsetTarget)
 			update_screen(); //Fluffy (MultiRoomRendering): Calling this so camera can smoothly move between rooms inbetween the game's 12fps tick rate, though it's only necessary to call this while the camera is moving
-		SDL_Delay(1);
+		SDL_Delay_NetworkUpdate(1); //(Fluffy (Multiplayer): Replaced this call so we can also do a network update)
 		process_events();
 		first = 0;
 	}
@@ -3788,7 +3851,7 @@ int __pascal do_wait(int timer_index) {
 #endif
 	update_screen();
 	while (! has_timer_stopped(timer_index)) {
-		SDL_Delay(1);
+		SDL_Delay_NetworkUpdate(1); //(Fluffy (Multiplayer): Replaced this call so we can also do a network update)
 		process_events();
 		int key = do_paused();
 		if (key != 0 && (word_1D63A != 0 || key == 0x1B)) return 1;
@@ -3881,7 +3944,7 @@ void __pascal far set_bg_attr(int vga_pal_index,int hc_pal_index) {
 //		update_screen();
 		// Give some time to show the flash.
 		//SDL_Flip(onscreen_surface_);
-//		if (hc_pal_index != 0) SDL_Delay(2*(1000/60));
+//		if (hc_pal_index != 0) SDL_Delay_NetworkUpdate(2*(1000/60)); //(Fluffy (Multiplayer): Replaced this call so we can also do a network update)
 		//SDL_Flip(onscreen_surface_);
 		/*
 		if (SDL_SetAlpha(offscreen_surface, 0, 0) != 0) {
