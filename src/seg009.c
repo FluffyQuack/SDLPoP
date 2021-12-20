@@ -2793,6 +2793,8 @@ static RenderGameTextures(int targetX, int targetY, int presentY, bool correctAs
 	SDL_Rect srcRect, dstRect;
 	float fullWidth = (320.0f / (correctAspectRatio ? 240.0f : 200.0f)) * (float) presentY; //240.0f means we display with correct aspect ratio (with a 5:6 pixel size ratio)
 	float gap = targetX - fullWidth;
+	float heightWithoutHUDgap = ((200 - 8) * ( (float) targetY / 200));
+	float HUDgap = targetY - heightWithoutHUDgap;
 	srcRect.x = 0;
 	srcRect.y = 0;
 	srcRect.w = 320;
@@ -2800,7 +2802,7 @@ static RenderGameTextures(int targetX, int targetY, int presentY, bool correctAs
 	dstRect.x = curOffset + (gap / 2);
 	dstRect.y = 0;
 	dstRect.w = fullWidth;
-	dstRect.h = targetY - ((targetY / 200) * 8);
+	dstRect.h = heightWithoutHUDgap;
 	SDL_RenderCopy(renderer_, target_texture, &srcRect, &dstRect);
 
 	//Fluffy (MultiRoomRendering): Right screen
@@ -2848,9 +2850,9 @@ static RenderGameTextures(int targetX, int targetY, int presentY, bool correctAs
 	srcRect.w = 320;
 	srcRect.h = 8;
 	dstRect.x = gap / 2;
-	dstRect.y = targetY - ((targetY / 200) * 8);
+	dstRect.y = heightWithoutHUDgap;
 	dstRect.w = fullWidth;
-	dstRect.h = (targetY / 200) * 8;
+	dstRect.h = HUDgap;
 	SDL_RenderCopy(renderer_, target_texture, &srcRect, &dstRect);
 
 	//Fluffy (MultiRoomRendering): Render overlay in the middle of the screen
@@ -2866,7 +2868,6 @@ static RenderGameTextures(int targetX, int targetY, int presentY, bool correctAs
 			else
 				alpha = 220;
 		}
-		alpha = 10;
 		SDL_SetRenderDrawColor(renderer_, 0, 0, 0, alpha);
 		SDL_RenderFillRect(renderer_, NULL);
 		SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_NONE);
