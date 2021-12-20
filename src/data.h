@@ -627,6 +627,7 @@ extern SDL_Window* window_;
 extern bool is_overlay_displayed;
 extern SDL_Texture* texture_sharp;
 extern SDL_Texture* texture_overlay; //Fluffy (MultiRoomRendering)
+extern SDL_Texture *texture_fuzzyRenderTarget; //Fluffy (MultiRoomRendering)
 
 //Fluffy (MultiRoomRendering)
 extern SDL_Texture* texture_sharp_extra[3];

@@ -2478,6 +2478,12 @@ void init_scaling(void) {
 		texture_overlay = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, 320, 200);
 		SDL_SetTextureBlendMode(texture_overlay, SDL_BLENDMODE_BLEND);
 	}
+	if(texture_fuzzyRenderTarget == NULL)
+	{
+		SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
+		texture_fuzzyRenderTarget = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_TARGET, pop_window_width, 1200);
+		SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
+	}
 
 	if (texture_sharp == NULL) {
 		texture_sharp = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STREAMING, 320, 200);
@@ -2514,6 +2520,7 @@ void init_scaling(void) {
 	} else {
 		target_texture = texture_sharp;
 	}
+	target_texture = texture_sharp; //Fluffy (MultiRoomRendering): We always want to use this target texture
 	if (target_texture == NULL) {
 		sdlperror("init_scaling: SDL_CreateTexture");
 		quit(1);
@@ -2761,38 +2768,8 @@ float GetCameraOffset()
 	return curOffset;
 }
 
-void update_screen() {
-	draw_overlay();
-	//SDL_Surface* surface = get_final_surface(); //Fluffy (MultiRoomRendering): Commented this out as we always want to use the surface with ingame graphics
-	SDL_Surface *surface = onscreen_surface_; //Fluffy (MultiRoomRendering)
-	init_scaling();
-	if (scaling_type == 1) {
-		// Make "fuzzy pixels" like DOSBox does:
-		// First scale to double size with nearest-neighbor scaling, then scale to full screen with smooth scaling.
-		// The result is not as blurry as if we did only a smooth scaling, but not as sharp as if we did only nearest-neighbor scaling.
-		if (is_renderer_targettexture_supported) {
-			SDL_UpdateTexture(texture_sharp, NULL, surface->pixels, surface->pitch);
-			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
-			SDL_SetRenderTarget(renderer_, target_texture);
-			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
-			SDL_RenderClear(renderer_);
-			SDL_RenderCopy(renderer_, texture_sharp, NULL, NULL);
-			SDL_SetRenderTarget(renderer_, NULL);
-		} else {
-			SDL_BlitScaled(surface, NULL, onscreen_surface_2x, NULL);
-			surface = onscreen_surface_2x;
-			SDL_UpdateTexture(target_texture, NULL, surface->pixels, surface->pitch);
-		}
-	} else {
-		SDL_UpdateTexture(target_texture, NULL, surface->pixels, surface->pitch);
-	}
-
-	//Fluffy (MultiRoomRendering): Copy overlay to texture
-	if(is_menu_shown)
-		SDL_UpdateTexture(texture_overlay, NULL, overlay_surface->pixels, overlay_surface->pitch);
-
-	SDL_RenderClear(renderer_);
-
+static RenderGameTextures(int targetX, int targetY, int presentY, bool correctAspectRatio) //Fluffy (MultiRoomRendering): Render game graphics, which can consist of multiple rooms
+{
 	//Fluffy (MultiRoomRendering): Update camera's exact position
 	float curOffset = GetCameraOffset();
 
@@ -2802,11 +2779,11 @@ void update_screen() {
 #define WIDTH 140
 		int kidX = 0;
 		if(Kid.x < MARGIN)
-			kidX = MARGIN;
+		kidX = MARGIN;
 		else if(Kid.x >= WIDTH + MARGIN)
-			kidX = WIDTH - 1;
+		kidX = WIDTH - 1;
 		else
-			kidX = Kid.x - MARGIN;
+		kidX = Kid.x - MARGIN;
 		kidX -= WIDTH / 2;
 		kidX -= 10;
 		curOffset -= kidX;
@@ -2814,8 +2791,8 @@ void update_screen() {
 
 	//Fluffy (MultiRoomRendering): Render middle (aka main) screen
 	SDL_Rect srcRect, dstRect;
-	float fullWidth = (320.0f / 240.0f) * (float) pop_window_height; //Replace 240 with 200 for incorrect aspect ratio with square pixels
-	float gap = pop_window_width - fullWidth;
+	float fullWidth = (320.0f / (correctAspectRatio ? 240.0f : 200.0f)) * (float) presentY; //240.0f means we display with correct aspect ratio (with a 5:6 pixel size ratio)
+	float gap = targetX - fullWidth;
 	srcRect.x = 0;
 	srcRect.y = 0;
 	srcRect.w = 320;
@@ -2823,11 +2800,11 @@ void update_screen() {
 	dstRect.x = curOffset + (gap / 2);
 	dstRect.y = 0;
 	dstRect.w = fullWidth;
-	dstRect.h = pop_window_height - ((pop_window_height / 200) * 8);
+	dstRect.h = targetY - ((targetY / 200) * 8);
 	SDL_RenderCopy(renderer_, target_texture, &srcRect, &dstRect);
 
 	//Fluffy (MultiRoomRendering): Right screen
-	if(dstRect.x + fullWidth < pop_window_width)
+	if(dstRect.x + fullWidth < targetX)
 	{
 		dstRect.x += fullWidth;
 		if(texture_sharp_right_needUpload)
@@ -2837,7 +2814,7 @@ void update_screen() {
 		}
 		SDL_RenderCopy(renderer_, texture_sharp_right_ptr, &srcRect, &dstRect);
 
-		if(dstRect.x + fullWidth < pop_window_width && texture_sharp_faraway_ptr) //There's still room left on the screen, so render a room that's two rooms away
+		if(dstRect.x + fullWidth < targetX && texture_sharp_faraway_ptr) //There's still room left on the screen, so render a room that's two rooms away
 		{
 			dstRect.x += fullWidth;
 			SDL_RenderCopy(renderer_, texture_sharp_faraway_ptr, &srcRect, &dstRect);
@@ -2871,9 +2848,9 @@ void update_screen() {
 	srcRect.w = 320;
 	srcRect.h = 8;
 	dstRect.x = gap / 2;
-	dstRect.y = pop_window_height - ((pop_window_height / 200) * 8);
+	dstRect.y = targetY - ((targetY / 200) * 8);
 	dstRect.w = fullWidth;
-	dstRect.h = (pop_window_height / 200) * 8;
+	dstRect.h = (targetY / 200) * 8;
 	SDL_RenderCopy(renderer_, target_texture, &srcRect, &dstRect);
 
 	//Fluffy (MultiRoomRendering): Render overlay in the middle of the screen
@@ -2889,6 +2866,7 @@ void update_screen() {
 			else
 				alpha = 220;
 		}
+		alpha = 10;
 		SDL_SetRenderDrawColor(renderer_, 0, 0, 0, alpha);
 		SDL_RenderFillRect(renderer_, NULL);
 		SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_NONE);
@@ -2900,11 +2878,55 @@ void update_screen() {
 		dstRect.x = gap / 2;
 		dstRect.y = 0;
 		dstRect.w = fullWidth;
-		dstRect.h = pop_window_height;
+		dstRect.h = targetY;
 		SDL_RenderCopy(renderer_, texture_overlay, &srcRect, &dstRect);
 	}
+}
 
-	SDL_RenderPresent(renderer_);
+void update_screen() {
+	draw_overlay();
+	//SDL_Surface* surface = get_final_surface(); //Fluffy (MultiRoomRendering): Commented this out as we always want to use the surface with ingame graphics
+	SDL_Surface *surface = onscreen_surface_; //Fluffy (MultiRoomRendering)
+	init_scaling();
+	//if (scaling_type == 1) {
+	//	// Make "fuzzy pixels" like DOSBox does:
+	//	// First scale to double size with nearest-neighbor scaling, then scale to full screen with smooth scaling.
+	//	// The result is not as blurry as if we did only a smooth scaling, but not as sharp as if we did only nearest-neighbor scaling.
+	//	if (is_renderer_targettexture_supported) {
+	//		SDL_UpdateTexture(texture_sharp, NULL, surface->pixels, surface->pitch);
+	//		SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
+	//		SDL_SetRenderTarget(renderer_, target_texture);
+	//		SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
+	//		SDL_RenderClear(renderer_);
+	//		SDL_RenderCopy(renderer_, texture_sharp, NULL, NULL);
+	//		SDL_SetRenderTarget(renderer_, NULL);
+	//	} else {
+	//		SDL_BlitScaled(surface, NULL, onscreen_surface_2x, NULL);
+	//		surface = onscreen_surface_2x;
+	//		SDL_UpdateTexture(target_texture, NULL, surface->pixels, surface->pitch);
+	//	}
+	//} else 
+	{
+		SDL_UpdateTexture(target_texture, NULL, surface->pixels, surface->pitch);
+	}
+
+	//Fluffy (MultiRoomRendering): Copy overlay to texture
+	if(is_menu_shown)
+		SDL_UpdateTexture(texture_overlay, NULL, overlay_surface->pixels, overlay_surface->pitch);
+
+	if(scaling_type == 1 && is_renderer_targettexture_supported) //Fluffy (MultiRoomRendering): "Fuzzy" rendering
+	{
+		SDL_SetRenderTarget(renderer_, texture_fuzzyRenderTarget);
+		RenderGameTextures(pop_window_width, 1200, pop_window_height, 1);
+		SDL_SetRenderTarget(renderer_, NULL);
+		SDL_RenderCopy(renderer_, texture_fuzzyRenderTarget, NULL, NULL);
+		SDL_RenderPresent(renderer_);
+	}
+	else //Nearest neighbour rendering
+	{
+		RenderGameTextures(pop_window_width, pop_window_height, pop_window_height, 1);
+		SDL_RenderPresent(renderer_);
+	}
 }
 
 // seg009:9289
