@@ -22,6 +22,7 @@ The authors of this program may be contacted at https://forum.princed.org
 #include <time.h>
 #include <errno.h>
 #include "Print.h"
+#include "Network\Network-Intermediate.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -2461,6 +2462,7 @@ void init_overlay(void) {
 	static bool initialized = false;
 	if (!initialized) {
 		overlay_surface = SDL_CreateRGBSurface(0, 320, 200, 32, 0xFF, 0xFF << 8, 0xFF << 16, 0xFF << 24) ;
+		miscOverlay_surface = SDL_CreateRGBSurface(0, 320, 200, 32, 0xFF, 0xFF << 8, 0xFF << 16, 0xFF << 24); //Fluffy (MultiRoomRendering)
 		merged_surface = SDL_CreateRGBSurface(0, 320, 200, 24, 0xFF, 0xFF << 8, 0xFF << 16, 0) ;
 		initialized = true;
 	}
@@ -2473,10 +2475,17 @@ void init_scaling(void) {
 	if (renderer_ == NULL) return;
 
 	//Fluffy (MultiRoomRendering)
-	if(texture_overlay == NULL)
+	if(texture_menuOverlay == NULL)
 	{
-		texture_overlay = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, 320, 200);
-		SDL_SetTextureBlendMode(texture_overlay, SDL_BLENDMODE_BLEND);
+		texture_menuOverlay = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, 320, 200);
+		SDL_SetTextureBlendMode(texture_menuOverlay, SDL_BLENDMODE_BLEND);
+	}
+	if(texture_miscOverlay == NULL)
+	{
+		SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
+		texture_miscOverlay = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, 320, 200);
+		SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
+		SDL_SetTextureBlendMode(texture_miscOverlay, SDL_BLENDMODE_BLEND);
 	}
 	if(texture_fuzzyRenderTarget == NULL)
 	{
@@ -2648,6 +2657,8 @@ void draw_overlay(void) {
 	is_overlay_displayed = false;
 #ifdef USE_DEBUG_CHEATS
 	if (is_timer_displayed && start_level > 0) overlay = 1; // Timer overlay
+	else if(1) //Fluffy (Multiplayer) TODO: Replace the "1" with a check if player has pressed Tab to show player list
+		overlay = 4; //Show player list
 	else if (fixes->fix_quicksave_during_feather &&
 				is_feather_timer_displayed &&
 				start_level > 0 &&
@@ -2657,12 +2668,12 @@ void draw_overlay(void) {
 #endif
 #ifdef USE_MENU
 	// Menu overlay - not drawn here directly, only copied from the overlay surface.
-	if (is_paused && is_menu_shown) overlay = 2;
+	//if (is_paused && is_menu_shown) overlay = 2; //Fluffy (MultiRoomRendering): This can be skipped as this function draws to a different buffer now
 #endif
 	if (overlay != 0) {
 		is_overlay_displayed = true;
 		surface_type* saved_target_surface = current_target_surface;
-		current_target_surface = overlay_surface;
+		current_target_surface = miscOverlay_surface; //Fluffy (MultiRoomRendering)
 		rect_type drawn_rect;
 		if (overlay == 1) {
 #ifdef USE_DEBUG_CHEATS
@@ -2720,6 +2731,35 @@ void draw_overlay(void) {
 
 			drawn_rect = timer_box_rect; // Only need to blit this bit to the merged_surface.
 #endif
+		} else if(overlay == 4) { //Fluffy (Multiplayer): Draw list of players (and scores if applicable)
+
+			//TODO: This code is unfinished
+			int j = 0;
+			for(int i = 0; i < MAXCLIENTS; i++)
+			{
+				char timer_text[100] = {0};
+				char *playerName = Network_Intermediate_GetPlayerName(i);
+				if(!playerName)
+					continue;
+				{
+					if (rem_min < 0) {
+						snprintf(timer_text, sizeof(timer_text), "%i: %s (%02d:%02d:%02d)",
+							j + 1, playerName, -(rem_min + 1), (719 - rem_tick) / 12, (719 - rem_tick) % 12);
+					} else {
+						snprintf(timer_text, sizeof(timer_text), "%i: %s (%02d:%02d:%02d)",
+							j + 1, playerName, rem_min - 1, rem_tick / 12, rem_tick % 12);
+					}
+				}
+				int line_width = (strnlen(timer_text, sizeof(timer_text))) * 7;
+
+				rect_type timer_box_rect = {0 + (10 * j), 0, 11 + (10 * j), line_width};
+				rect_type timer_text_rect = {2 + (10 * j), 2, 10 + (10 * j), 200};
+				draw_rect_with_alpha(&timer_box_rect, color_0_black, 128);
+				show_text_with_color(&timer_text_rect, -1, -1, timer_text, color_10_brightgreen);
+				j++;
+			}
+			rect_type timer_box_rect = {0, 0, 1 + (10 * j), 200};
+			drawn_rect = timer_box_rect; // Only need to blit this bit to the merged_surface.
 		} else {
 			drawn_rect = screen_rect; // We'll blit the whole contents of overlay_surface to the merged_surface.
 		}
@@ -2855,6 +2895,20 @@ static RenderGameTextures(int targetX, int targetY, int presentY, bool correctAs
 	dstRect.h = HUDgap;
 	SDL_RenderCopy(renderer_, target_texture, &srcRect, &dstRect);
 
+	//Render the misc overlay if it's active
+	if(is_overlay_displayed)
+	{
+		srcRect.x = 0;
+		srcRect.y = 0;
+		srcRect.w = 320;
+		srcRect.h = 200;
+		dstRect.x = 0;
+		dstRect.y = 0;
+		dstRect.w = fullWidth / 2;
+		dstRect.h = targetY / 2;
+		SDL_RenderCopy(renderer_, texture_miscOverlay, &srcRect, &dstRect);
+	}
+
 	//Fluffy (MultiRoomRendering): Render overlay in the middle of the screen
 	if(is_menu_shown)
 	{
@@ -2880,7 +2934,7 @@ static RenderGameTextures(int targetX, int targetY, int presentY, bool correctAs
 		dstRect.y = 0;
 		dstRect.w = fullWidth;
 		dstRect.h = targetY;
-		SDL_RenderCopy(renderer_, texture_overlay, &srcRect, &dstRect);
+		SDL_RenderCopy(renderer_, texture_menuOverlay, &srcRect, &dstRect);
 	}
 }
 
@@ -2913,7 +2967,9 @@ void update_screen() {
 
 	//Fluffy (MultiRoomRendering): Copy overlay to texture
 	if(is_menu_shown)
-		SDL_UpdateTexture(texture_overlay, NULL, overlay_surface->pixels, overlay_surface->pitch);
+		SDL_UpdateTexture(texture_menuOverlay, NULL, overlay_surface->pixels, overlay_surface->pitch);
+	if(is_overlay_displayed)
+		SDL_UpdateTexture(texture_miscOverlay, NULL, miscOverlay_surface->pixels, miscOverlay_surface->pitch);
 
 	if(scaling_type == 1 && is_renderer_targettexture_supported) //Fluffy (MultiRoomRendering): "Fuzzy" rendering
 	{

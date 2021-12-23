@@ -620,13 +620,15 @@ extern SDL_Surface* onscreen_surface_;
 extern SDL_Surface* onscreen_surface_right; //Fluffy (MultiRoomRendering)
 extern SDL_Surface* onscreen_surface_left; //Fluffy (MultiRoomRendering)
 extern SDL_Surface* overlay_surface;
+extern SDL_Surface* miscOverlay_surface;
 extern SDL_Surface* merged_surface;
 extern SDL_Renderer* renderer_;
 extern bool is_renderer_targettexture_supported;
 extern SDL_Window* window_;
 extern bool is_overlay_displayed;
 extern SDL_Texture* texture_sharp;
-extern SDL_Texture* texture_overlay; //Fluffy (MultiRoomRendering)
+extern SDL_Texture* texture_menuOverlay; //Fluffy (MultiRoomRendering)
+extern SDL_Texture* texture_miscOverlay; //Fluffy (MultiRoomRendering)
 extern SDL_Texture *texture_fuzzyRenderTarget; //Fluffy (MultiRoomRendering)
 
 //Fluffy (MultiRoomRendering)
