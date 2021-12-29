@@ -22,7 +22,7 @@ short Network_GetUnusedPlayerId()
 		bool isPlayerIdUsed = 0;
 		for(int i = 0; i < MAXCLIENTS; i++)
 		{
-			if(networkPlayers[i].active && networkPlayers[i].networkId == lastAssignedPlayerId)
+			if(networkPlayers[i].state != NETWORKPLAYERSTATE_UNUSED && networkPlayers[i].networkId == lastAssignedPlayerId)
 			{
 				isPlayerIdUsed = 1;
 				break;
@@ -36,7 +36,7 @@ short Network_GetUnusedPlayerId()
 void Network_ResetPlayers(bool resetAll, bool resetLocalPlayerId)
 {
 	memset(&networkPlayers[1], 0, sizeof(networkPlayer_s) * (MAXCLIENTS - 1));
-	networkPlayers[0].active = 1;
+	networkPlayers[0].state = NETWORKPLAYERSTATE_ACTIVE;
 	lastAssignedPlayerId = 0;
 	if(resetAll) //If true, we also reset the local player's id and name. This should only ever be done once as we start the program.
 	{
@@ -48,11 +48,21 @@ void Network_ResetPlayers(bool resetAll, bool resetLocalPlayerId)
 		networkPlayers[0].id = 0;
 }
 
+networkPlayer_s *Network_FindDisconnectedPlayerByName(char *name)
+{
+	for(int i = 0; i < MAXCLIENTS; i++)
+	{
+		if(networkPlayers[i].state == NETWORKPLAYERSTATE_DISCONNECTED && strcmp(networkPlayers[i].name, name) == 0)
+			return &networkPlayers[i];
+	}
+	return 0;
+}
+
 networkPlayer_s *Network_FindPlayerByNetworkId(unsigned long long networkId)
 {
 	for(int i = 0; i < MAXCLIENTS; i++)
 	{
-		if(networkPlayers[i].active && networkPlayers[i].networkId == networkId)
+		if(networkPlayers[i].state == NETWORKPLAYERSTATE_ACTIVE && networkPlayers[i].networkId == networkId)
 			return &networkPlayers[i];
 	}
 	return 0;
@@ -62,7 +72,7 @@ networkPlayer_s *Network_FindPlayerByPlayerId(short playerId)
 {
 	for(int i = 0; i < MAXCLIENTS; i++)
 	{
-		if(networkPlayers[i].active && networkPlayers[i].id == playerId)
+		if(networkPlayers[i].state == NETWORKPLAYERSTATE_ACTIVE && networkPlayers[i].id == playerId)
 			return &networkPlayers[i];
 	}
 	return 0;
@@ -72,10 +82,18 @@ networkPlayer_s *Network_ReturnFreePlayerSlot()
 {
 	for(int i = 0; i < MAXCLIENTS; i++)
 	{
-		if(!networkPlayers[i].active)
+		if(networkPlayers[i].state == NETWORKPLAYERSTATE_UNUSED)
 			return &networkPlayers[i];
 	}
 	return 0;
+}
+
+void Network_MarkPlayerAsDisconnected(unsigned long long networkId)
+{
+	networkPlayer_s *player = Network_FindPlayerByNetworkId(networkId);
+	if(player == 0)
+		return;
+	player->state = NETWORKPLAYERSTATE_DISCONNECTED;
 }
 
 void Network_RemovePlayer(unsigned long long networkId)
@@ -83,7 +101,7 @@ void Network_RemovePlayer(unsigned long long networkId)
 	networkPlayer_s *player = Network_FindPlayerByNetworkId(networkId);
 	if(player == 0)
 		return;
-	player->active = 0;
+	player->state = NETWORKPLAYERSTATE_UNUSED;
 }
 
 bool Network_AddPlayer(unsigned long long networkId, short playerId, char *name, unsigned char red, unsigned char green, unsigned char blue)
@@ -92,7 +110,7 @@ bool Network_AddPlayer(unsigned long long networkId, short playerId, char *name,
 	if(player == 0)
 		return 0;
 
-	player->active = 1;
+	player->state = NETWORKPLAYERSTATE_ACTIVE;
 	player->networkId = networkId;
 	player->id = playerId;
 	player->red = red;
@@ -119,7 +137,7 @@ void Network_WeGotAcceptedIntoServer(int playerId) //We got accepted into the se
 	PrintToConsole("List of players:\n");
 	for(int i = 0; i < MAXCLIENTS; i++)
 	{
-		if(networkPlayers[i].active)
+		if(networkPlayers[i].state == NETWORKPLAYERSTATE_ACTIVE)
 			PrintToConsole("%s (networkId: %llu) (playerId: %i) (colour: %u %u %u)\n", networkPlayers[i].name, networkPlayers[i].networkId, networkPlayers[i].id, networkPlayers[i].red, networkPlayers[i].green, networkPlayers[i].blue);
 	}
 
@@ -140,12 +158,24 @@ void Network_NewPlayerConnected(SLNet::RakNetGUID guid) //This is called wheneve
 	PrintToConsole("List of players:\n");
 	for(int i = 0; i < MAXCLIENTS; i++)
 	{
-		if(networkPlayers[i].active)
+		if(networkPlayers[i].state == NETWORKPLAYERSTATE_ACTIVE)
 			PrintToConsole("%s (networkId: %llu) (playerId: %i) (colour: %u %u %u)\n", networkPlayers[i].name, networkPlayers[i].networkId, networkPlayers[i].id, networkPlayers[i].red, networkPlayers[i].green, networkPlayers[i].blue);
 	}
 }
 
-void Network_PlayerDisconnected(SLNet::RakNetGUID guid) //This is called whenever a new player is added to the game. Only used by host.
+void Network_PlayerReconnected(SLNet::RakNetGUID guid) //This is called whenever a player connects after having fully disconnected earlier. Only used by host.
 {
-	//TODO: If anything needs to be removed from the game related to the player that just disconnected, we should do that here
+	//TODO: Do stuff if there's anything we need to re-sync entitites the player used to own
+
+	PrintToConsole("List of players:\n");
+	for(int i = 0; i < MAXCLIENTS; i++)
+	{
+		if(networkPlayers[i].state == NETWORKPLAYERSTATE_ACTIVE)
+			PrintToConsole("%s (networkId: %llu) (playerId: %i) (colour: %u %u %u)\n", networkPlayers[i].name, networkPlayers[i].networkId, networkPlayers[i].id, networkPlayers[i].red, networkPlayers[i].green, networkPlayers[i].blue);
+	}
+}
+
+void Network_PlayerDisconnected(SLNet::RakNetGUID guid) //This is called whenever a player disconnects from our game. Only used by host.
+{
+	//TODO: If anything needs to be removed from the game related to the player that just disconnected, we should do that here (we should remember that we allow clients to re-connect into the same player slot, so it would be beneficial if entities can be re-used somehow)
 }

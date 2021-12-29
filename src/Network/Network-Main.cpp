@@ -320,7 +320,7 @@ void Network_CheckForPackets()
 					PrintToConsole("A client has disconnected (GUID: %llu).\n", packet->guid.g);
 				else
 					PrintToConsole("A client lost the connection (GUID: %llu).\n", packet->guid.g);
-				Network_RemovePlayer(packet->guid.g);
+				Network_MarkPlayerAsDisconnected(packet->guid.g);
 				if(clientsConnectedTo)
 					Network_Send_RemovePlayer(packet->guid, packet->guid.g, 1);
 				Network_PlayerDisconnected(packet->guid);

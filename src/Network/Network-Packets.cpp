@@ -229,7 +229,7 @@ static void Network_Handle_ApplicationAndPlayerName(SLNet::Packet *p)
 	SLNet::BitStream bitStream(p->data, p->length, false);
 	Network_Bitstream_SkipMessageId(&bitStream); //Ignore message id
 
-	for(int i = 0; i < 3; i++)
+	for(int i = 0; i < 3; i++) //In order, we're reading these strings: application name, application version, player name
 	{
 		unsigned char stringLength;
 		bitStream.Read(stringLength);
@@ -248,31 +248,53 @@ static void Network_Handle_ApplicationAndPlayerName(SLNet::Packet *p)
 			bitStream.Read(red);
 			bitStream.Read(green);
 			bitStream.Read(blue);
-			short playerId = Network_GetUnusedPlayerId();
+
+			//Check if this is a player who used to be connected
+			short playerId;
+			networkPlayer_s *player = Network_FindDisconnectedPlayerByName(str);
+			bool reconnectingPlayer = 0;
+			if(player) //Player used to be connected, so use same slot and same playerId
+			{
+				playerId = player->id;
+				player->state = NETWORKPLAYERSTATE_ACTIVE;
+				player->networkId = p->guid.g;
+				player->red = red;
+				player->green = green;
+				player->blue = blue;
+				reconnectingPlayer = 1;
+				PrintToConsole("Reconnected player %s with networkId %llu, playerId %i, and colours %u %u %u\n", str, p->guid.g, playerId, red, green, blue);
+			}
+			else
+				playerId = Network_GetUnusedPlayerId();
+
 			if(playerId == -1) //This is absurdly unlikely to happen
 			{
 				delete[]str;
 				goto invalid_cantaddmoreplayers;
 			}
-			if(!Network_AddPlayer(p->guid.g, playerId, str, red, green, blue)) //Add player
+			if(!reconnectingPlayer)
 			{
-				delete[]str;
-				goto invalid_cantaddmoreplayers;
+				if(!Network_AddPlayer(p->guid.g, playerId, str, red, green, blue)) //Add player
+				{
+					delete[]str;
+					goto invalid_cantaddmoreplayers;
+				}
 			}
-
 			Network_Send_AddPlayer(p->guid, p->guid.g, playerId, str, red, green, blue, 1); //Let other clients know about this new player
 
-			//Let the new player know about other clients (including ourself)
-			for(int j = 0; j < MAXCLIENTS; j++)
+			for(int j = 0; j < MAXCLIENTS; j++) //Let the new player know about other clients (including ourself)
 			{
-				if(networkPlayers[j].active && networkPlayers[j].networkId != p->guid.g)
+				if(networkPlayers[j].state == NETWORKPLAYERSTATE_ACTIVE && networkPlayers[j].networkId != p->guid.g)
 					Network_Send_AddPlayer(p->guid, networkPlayers[j].networkId, networkPlayers[j].id, networkPlayers[j].name, networkPlayers[j].red, networkPlayers[j].green, networkPlayers[j].blue, 0);
 			}
 
-			Network_NewPlayerConnected(p->guid);
-
 			//Send a packet to the new player with their new playerid
 			Network_Send_GiveNewPlayerTheirPlayerId(p->guid, playerId);
+
+			if(reconnectingPlayer)
+				Network_PlayerReconnected(p->guid);
+			else
+				Network_NewPlayerConnected(p->guid);
 		}
 
 		delete[]str;
