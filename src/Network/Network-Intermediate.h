@@ -4,7 +4,7 @@
 extern "C" {
 #endif
 
-#define MAXCLIENTS 128
+#define NETWORK_MAXCLIENTS 128
 
 void Network_Intermediate_Start(int networkStart, int port, char *ip, char *name, unsigned char colourRed, unsigned char colourGreen, unsigned char colourBlue);
 void Network_Update();

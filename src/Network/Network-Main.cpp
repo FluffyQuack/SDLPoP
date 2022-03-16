@@ -27,8 +27,8 @@
 #endif
 
 static SLNet::RakPeerInterface *peer =  0;
-static int network_status = NETWORKSTATUS_OFF;
-static int clientsConnectedTo = 0;
+int network_status = NETWORKSTATUS_OFF;
+int network_clientsConnectedTo = 0;
 static unsigned long long network_bytesSent = 0;
 static unsigned long long network_bytesReceived = 0;
 char network_ip[NETWORKIP_LENGTH] = "127.0.0.1";
@@ -87,7 +87,7 @@ void Network_Start(bool host)
 	if(host)
 	{
 		socketDescriptor.port = network_port;
-		success = peer->Startup(MAXCLIENTS, &socketDescriptor, 1);
+		success = peer->Startup(NETWORK_MAXCLIENTS, &socketDescriptor, 1);
 	}
 	else //Joining server
 	{
@@ -123,7 +123,7 @@ void Network_Start(bool host)
 
 	if(host)
 	{
-		peer->SetMaximumIncomingConnections(MAXCLIENTS);
+		peer->SetMaximumIncomingConnections(NETWORK_MAXCLIENTS);
 		PrintToConsole("Successfully started hosting server.\n");
 		network_status = NETWORKSTATUS_SERVER_HOSTING;
 	}
@@ -154,7 +154,7 @@ void Network_Start(bool host)
 
 	network_bytesSent = 0;
 	network_bytesReceived = 0;
-	clientsConnectedTo = 0;
+	network_clientsConnectedTo = 0;
 	network_scheduleTermination = 0;
 }
 
@@ -171,6 +171,10 @@ void Network_Stop()
 		return;
 	}
 	PrintToConsole("Attempting to shut down network.\n");
+
+	if(network_status == NETWORKSTATUS_CLIENT_CONNECTED) //If we're a client, then send a packet to host telling them we're leaving
+		Network_Send_LeaveNotification();
+
 	if(network_status != NETWORKSTATUS_OFF)
 		peer->Shutdown(1000);
 	PrintToConsole("Network shut down.\n");
@@ -181,13 +185,13 @@ void Network_Stop()
 
 	//Reset info about network players
 	Network_ResetPlayers(0, 1);
-	clientsConnectedTo = 0;
+	network_clientsConnectedTo = 0;
 	network_scheduleTermination = 0;
 }
 
 void Network_SendPacket(const char *data , int packetsize, SLNet::AddressOrGUID destination, bool broadcast, PacketReliability reliability, PacketPriority priority, char orderingchannel)
 {
-	if(network_status == NETWORKSTATUS_OFF || network_status == NETWORKSTATUS_CLIENT_JOINING || peer == 0 || clientsConnectedTo == 0)
+	if(network_status == NETWORKSTATUS_OFF || network_status == NETWORKSTATUS_CLIENT_JOINING || peer == 0 || network_clientsConnectedTo == 0)
 	{
 		PrintToConsole("Network_SendPacket() was called while not connected to any client.\n");
 		return;
@@ -202,9 +206,14 @@ void Network_SendPacket(const char *data , int packetsize, SLNet::AddressOrGUID 
 	peer->Send(data, packetsize, priority, reliability, orderingchannel, destination, broadcast);
 }
 
+void Network_SendPacket_DefaultPacketProperties(const char *data, int packetsize, unsigned short id, SLNet::AddressOrGUID destination, bool broadcast)
+{
+	Network_SendPacket(data, packetsize, destination, broadcast, packetTypeInfo[id].reliability, packetTypeInfo[id].priority, packetTypeInfo[id].orderingchannel);
+}
+
 void Network_SendBitStream(SLNet::BitStream *bitStream, SLNet::AddressOrGUID destination, bool broadcast, PacketReliability reliability, PacketPriority priority, char orderingchannel)
 {
-	if(network_status == NETWORKSTATUS_OFF || network_status == NETWORKSTATUS_CLIENT_JOINING || peer == 0 || clientsConnectedTo == 0)
+	if(network_status == NETWORKSTATUS_OFF || network_status == NETWORKSTATUS_CLIENT_JOINING || peer == 0 || network_clientsConnectedTo == 0)
 	{
 		PrintToConsole("Network_SendBitStream() was called while not connected to any client.\n");
 		return;
@@ -217,6 +226,11 @@ void Network_SendBitStream(SLNet::BitStream *bitStream, SLNet::AddressOrGUID des
 
 	network_bytesSent += (unsigned int) bitStream->GetNumberOfBytesUsed();
 	peer->Send(bitStream, priority, reliability, orderingchannel, destination, broadcast);
+}
+
+void Network_SendBitStream_DefaultPacketProperties(SLNet::BitStream *bitStream, unsigned short id, SLNet::AddressOrGUID destination, bool broadcast)
+{
+	Network_SendBitStream(bitStream, destination, broadcast, packetTypeInfo[id].reliability, packetTypeInfo[id].priority, packetTypeInfo[id].orderingchannel);
 }
 
 static unsigned long Network_GetTimeStampFromPacket(SLNet::Packet *p) 
@@ -255,12 +269,12 @@ static void UpdateGUIDAfterNewConnection(SLNet::Packet *packet, unsigned char id
 
 bool Network_ConnectedToAnyClient()
 {
-	return clientsConnectedTo > 0;
+	return network_clientsConnectedTo > 0;
 }
 
 bool Network_HostingForAnyClient()
 {
-	return clientsConnectedTo > 0 && network_status == NETWORKSTATUS_SERVER_HOSTING;
+	return network_clientsConnectedTo > 0 && network_status == NETWORKSTATUS_SERVER_HOSTING;
 }
 
 void Network_CheckForPackets()
@@ -286,7 +300,7 @@ void Network_CheckForPackets()
 		{
 		case ID_CONNECTION_REQUEST_ACCEPTED:
 		{
-			clientsConnectedTo++;
+			network_clientsConnectedTo++;
 			network_status = NETWORKSTATUS_CLIENT_CONNECTED;
 			PrintToConsole("Our connection request has been accepted by the host (GUID: %llu).\n", packet->guid.g);
 			UpdateGUIDAfterNewConnection(packet, id);
@@ -302,7 +316,7 @@ void Network_CheckForPackets()
 			break;
 		case ID_NEW_INCOMING_CONNECTION:
 		{
-			clientsConnectedTo++;
+			network_clientsConnectedTo++;
 			PrintToConsole("We've established a connection with a new client (GUID: %llu).\n", packet->guid.g);
 			UpdateGUIDAfterNewConnection(packet, id);
 			break;
@@ -313,17 +327,33 @@ void Network_CheckForPackets()
 			break;
 		case ID_DISCONNECTION_NOTIFICATION:
 		case ID_CONNECTION_LOST:
-			clientsConnectedTo--;
+			network_clientsConnectedTo--;
 			if(network_status == NETWORKSTATUS_SERVER_HOSTING)
 			{
-				if(id == ID_DISCONNECTION_NOTIFICATION)
+				networkPlayer_s *disconnectingPlayer = Network_FindPlayerByNetworkId(packet->guid.g);
+				if(disconnectingPlayer == 0) //If we didn't find the player, then this is probably someone how didn't get far enough along into the handshake process to be added to the networkPlayer array. In which case we don't need to do anything else here
+					break;
+
+				if(disconnectingPlayer->state & NETWORKPLAYERSTATE_ABOUTTOLEAVE)
+					PrintToConsole("A client has manually left the session (GUID: %llu).\n", packet->guid.g);
+				else if(id == ID_DISCONNECTION_NOTIFICATION)
 					PrintToConsole("A client has disconnected (GUID: %llu).\n", packet->guid.g);
 				else
 					PrintToConsole("A client lost the connection (GUID: %llu).\n", packet->guid.g);
-				Network_MarkPlayerAsDisconnected(packet->guid.g);
-				if(clientsConnectedTo)
+
+				//Note: To force a behaviour where we always want a player to be able to reconnect after leaving, or we want to always force a player to be fully deleted when leaving, we can choose that by altering the below if statement to always be true or false
+				if(disconnectingPlayer && disconnectingPlayer->state & NETWORKPLAYERSTATE_ABOUTTOLEAVE) //If a player requested to leave (that is, they're quitting the session manually), then we fully remove them
+				{
+					Network_PlayerLeft(packet->guid);
+					Network_RemovePlayer(packet->guid.g);
+				}
+				else //If they disconnected through other means, then we'll keep the player in our player array but marked as "disconnected
+				{
+					Network_PlayerDisconnected(packet->guid);
+					Network_MarkPlayerAsDisconnected(packet->guid.g);
+				}
+				if(network_clientsConnectedTo)
 					Network_Send_RemovePlayer(packet->guid, packet->guid.g, 1);
-				Network_PlayerDisconnected(packet->guid);
 			}
 			else 
 			{

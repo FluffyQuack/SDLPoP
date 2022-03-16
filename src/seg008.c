@@ -1721,7 +1721,7 @@ void __pascal far draw_kid() {
 	//Fluffy (Multiplayer): Render the prince of every network client (including ourself)
 	currentlyAddingPrince = 0;
 	char_type kidBackup = Kid;
-	for(int i = 0; i < MAXCLIENTS; i++) //We may seem to go with a weird order here, but that's to ensure correct render order since we offset render position slightly for each player
+	for(int i = 0; i < NETWORK_MAXCLIENTS; i++) //We may seem to go with a weird order here, but that's to ensure correct render order since we offset render position slightly for each player
 	{
 		unsigned short remote_current_level;
 
@@ -1753,8 +1753,8 @@ void __pascal far draw_kid() {
 
 	skip:
 		currentlyAddingPrince += 6;
-		if(currentlyAddingPrince >= MAXCLIENTS)
-			currentlyAddingPrince -= (MAXCLIENTS - 1);
+		if(currentlyAddingPrince >= NETWORK_MAXCLIENTS)
+			currentlyAddingPrince -= (NETWORK_MAXCLIENTS - 1);
 	}
 	currentlyAddingPrince = -1;
 	Kid = kidBackup;

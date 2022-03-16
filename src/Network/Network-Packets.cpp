@@ -9,27 +9,25 @@
 #include "Network-PrincePackets.h"
 #include "..\Print.h"
 
+enum
+{
+	DISCONNECTREASON_WRONGVERSION, //Client tried to join using the wrong application name or version
+	DISCONNECTREASON_OUTOFPLAYERIDS, //Server failed to add player (either due to networkPlayer array being full or running out of playerIds)
+	DISCONNECTREASON_DUPLICATENAME, //Client was refused to join because there's already an active player with the same name
+};
+
 static const char *applicationName = "Test";
 static const char *applicationVersion = "Test";
 
-struct packetTypeInfo_s
-{
-	void (*handleFunction) (SLNet::Packet *); //The function we'll call for handling this packet type
-	bool relay; //If true, this packet will be relayed to all other clients if the host receives it from a client
-	PacketReliability reliability;
-	PacketPriority priority;
-	char orderingchannel;
-};
-
 packetTypeInfo_s packetTypeInfo[CUSTOMPACKETID_NUM];
 
-static unsigned short Network_GetCustomIdFromPacketBytes(unsigned char *bytes)
+unsigned short Network_GetCustomIdFromPacketBytes(unsigned char *bytes)
 {
 	//First byte is partially reserved by RakNet for internal packet types
 	return ( (unsigned short) (bytes[0] - ID_USER_PACKET_ENUM) * 256) + bytes[1];
 }
 
-static unsigned short Network_GetPacketIdBytesFromCustomId(unsigned short customId)
+unsigned short Network_GetPacketIdBytesFromCustomId(unsigned short customId)
 {
 	unsigned short returnValue;
 	((unsigned char *) &returnValue)[0] = ID_USER_PACKET_ENUM + (customId / 256);
@@ -48,11 +46,6 @@ void Network_Bitstream_WriteMessageId(SLNet::BitStream *bitStream, unsigned shor
 	unsigned short messageId = Network_GetPacketIdBytesFromCustomId(realId);
 	bitStream->Write( (SLNet::MessageID) ((unsigned char *) &messageId)[0]);
 	bitStream->Write( (unsigned char &) ((unsigned char *) &messageId)[1]);
-}
-
-void Network_SendBitStream_DefaultPacketProperties(SLNet::BitStream *bitStream, SLNet::AddressOrGUID destination, bool broadcast, unsigned short id)
-{
-	Network_SendBitStream(bitStream, destination, broadcast, packetTypeInfo[id].reliability, packetTypeInfo[id].priority, packetTypeInfo[id].orderingchannel);
 }
 
 static void AddApplicationNameAndVersion(SLNet::BitStream *bitStream)
@@ -90,58 +83,96 @@ void Network_Send_ChangePlayerGuid(unsigned long long oldGuid, unsigned long lon
 	Network_Bitstream_WriteMessageId(&bitStream, CUSTOMPACKETID_CHANGEPLAYERSGUID);
 	bitStream.Write(oldGuid);
 	bitStream.Write(newGuid);
-	Network_SendBitStream_DefaultPacketProperties(&bitStream, SLNet::UNASSIGNED_RAKNET_GUID, 1, CUSTOMPACKETID_CHANGEPLAYERSGUID);
+	Network_SendBitStream_DefaultPacketProperties(&bitStream, CUSTOMPACKETID_CHANGEPLAYERSGUID, SLNet::UNASSIGNED_RAKNET_GUID, 1);
 }
 
-void Network_Handle_AskPlayerToLeave_WrongVersion(SLNet::Packet *p)
+void Network_Handle_AskPlayerToLeave(SLNet::Packet *p)
 {
 	SLNet::BitStream bitStream(p->data, p->length, false);
 	Network_Bitstream_SkipMessageId(&bitStream); //Ignore message id
 
-	char *str1 = 0, *str2 = 0;
-	for(int i = 0; i < 2; i++)
+	char disconnectReason;
+	bitStream.Read(disconnectReason);
+	switch(disconnectReason)
 	{
-		unsigned char stringLength;
-		bitStream.Read(stringLength);
-		if(i == 0)
+	case DISCONNECTREASON_WRONGVERSION:
+	{
+		char *str1 = 0, *str2 = 0;
+		for(int i = 0; i < 2; i++)
 		{
-			str1 = new char[stringLength + 1];
-			bitStream.Read(str1, stringLength);
-			str1[stringLength] = 0;
+			unsigned char stringLength;
+			bitStream.Read(stringLength);
+			if(i == 0)
+			{
+				str1 = new char[stringLength + 1];
+				bitStream.Read(str1, stringLength);
+				str1[stringLength] = 0;
+			}
+			else
+			{
+				str2 = new char[stringLength + 1];
+				bitStream.Read(str2, stringLength);
+				str2[stringLength] = 0;
+			}
 		}
-		else
-		{
-			str2 = new char[stringLength + 1];
-			bitStream.Read(str2, stringLength);
-			str2[stringLength] = 0;
-		}
+
+		PrintToConsole("Warning: We were refused access to the server because we've got the wrong application name or version.\nExpected: %s - %s\nOurs: %s - %s\n", str1, str2, applicationName, applicationVersion);
+		delete[]str1;
+		delete[]str2;
+		break;
+	}
+	case DISCONNECTREASON_OUTOFPLAYERIDS:
+	{
+		PrintToConsole("Warning: We were refused access to the server because the server failed to add another network player.\n");
+		break;
+	}
+	case DISCONNECTREASON_DUPLICATENAME:
+	{
+		PrintToConsole("Warning: We were refused access to the server because there's another player with our name.\n");
+		break;
+	}
 	}
 
-	PrintToConsole("Warning: We were refused access to the server because we've got the wrong application name or version.\nExpected: %s - %s\nOurs: %s - %s\n", str1, str2, applicationName, applicationVersion);
-	delete[]str1;
-	delete[]str2;
 	network_scheduleTermination = 1;
 }
 
-void Network_Send_AskPlayerToLeave_WrongVersion(SLNet::RakNetGUID guid)
+void Network_Send_AskPlayerToLeave(SLNet::RakNetGUID guid, char disconnectReason)
 {
 	SLNet::BitStream bitStream;
-	Network_Bitstream_WriteMessageId(&bitStream, CUSTOMPACKETID_ASKPLAYERTODISCONNECT_WRONGVERSION);
-	AddApplicationNameAndVersion(&bitStream);
-	Network_SendBitStream_DefaultPacketProperties(&bitStream, guid, false, CUSTOMPACKETID_ASKPLAYERTODISCONNECT_WRONGVERSION);
+	Network_Bitstream_WriteMessageId(&bitStream, CUSTOMPACKETID_ASKPLAYERTODISCONNECT);
+	bitStream.Write(disconnectReason);
+	switch(disconnectReason)
+	{
+	case DISCONNECTREASON_WRONGVERSION:
+	{
+		AddApplicationNameAndVersion(&bitStream);
+		break;
+	}
+	case DISCONNECTREASON_OUTOFPLAYERIDS:
+	case DISCONNECTREASON_DUPLICATENAME:
+	{
+		break;
+	}
+	}
+
+	Network_SendBitStream_DefaultPacketProperties(&bitStream, CUSTOMPACKETID_ASKPLAYERTODISCONNECT, guid, false);
 }
 
-void Network_Handle_AskPlayerToLeave_CantAddPlayer(SLNet::Packet *p)
+void Network_Handle_LeaveNotification(SLNet::Packet *p)
 {
-	PrintToConsole("Warning: We were refused access to the server because the server failed to add another network player.\n");
-	network_scheduleTermination = 1;
+	SLNet::BitStream bitStream(p->data, p->length, false);
+	Network_Bitstream_SkipMessageId(&bitStream); //Ignore message id
+
+	networkPlayer_s *player = Network_FindPlayerByNetworkId(p->guid.g);
+	if(player)
+		player->state |= NETWORKPLAYERSTATE_ABOUTTOLEAVE;
 }
 
-void Network_Send_AskPlayerToLeave_CantAddPlayer(SLNet::RakNetGUID guid)
+void Network_Send_LeaveNotification()
 {
 	SLNet::BitStream bitStream;
-	Network_Bitstream_WriteMessageId(&bitStream, CUSTOMPACKETID_ASKPLAYERTODISCONNECT_CANTADDPLAYER);
-	Network_SendBitStream_DefaultPacketProperties(&bitStream, guid, false, CUSTOMPACKETID_ASKPLAYERTODISCONNECT_CANTADDPLAYER);
+	Network_Bitstream_WriteMessageId(&bitStream, CUSTOMPACKETID_PLAYERLEAVING);
+	Network_SendBitStream_DefaultPacketProperties(&bitStream, CUSTOMPACKETID_PLAYERLEAVING, SLNet::UNASSIGNED_RAKNET_GUID, 1);
 }
 
 void Network_Handle_RemovePlayer(SLNet::Packet *p)
@@ -159,7 +190,7 @@ void Network_Send_RemovePlayer(SLNet::RakNetGUID guid, unsigned long long id, bo
 	SLNet::BitStream bitStream;
 	Network_Bitstream_WriteMessageId(&bitStream, CUSTOMPACKETID_REMOVEPLAYER);
 	bitStream.Write(id);
-	Network_SendBitStream_DefaultPacketProperties(&bitStream, guid, broadcast, CUSTOMPACKETID_REMOVEPLAYER);
+	Network_SendBitStream_DefaultPacketProperties(&bitStream, CUSTOMPACKETID_REMOVEPLAYER, guid, broadcast);
 }
 
 void Network_Handle_AddPlayer(SLNet::Packet *p)
@@ -201,7 +232,7 @@ void Network_Send_AddPlayer(SLNet::RakNetGUID guid, unsigned long long networkId
 	bitStream.Write(green);
 	bitStream.Write(blue);
 
-	Network_SendBitStream_DefaultPacketProperties(&bitStream, guid, broadcast, CUSTOMPACKETID_ADDPLAYER);
+	Network_SendBitStream_DefaultPacketProperties(&bitStream, CUSTOMPACKETID_ADDPLAYER, guid, broadcast);
 }
 
 void Network_Handle_GiveNewPlayerTheirPlayerId(SLNet::Packet *p)
@@ -221,13 +252,16 @@ void Network_Send_GiveNewPlayerTheirPlayerId(SLNet::RakNetGUID guid, short playe
 
 	bitStream.Write(playerId);
 
-	Network_SendBitStream_DefaultPacketProperties(&bitStream, guid, 0, CUSTOMPACKETID_GIVENEWPLAYERID);
+	Network_SendBitStream_DefaultPacketProperties(&bitStream, CUSTOMPACKETID_GIVENEWPLAYERID, guid, 0);
 }
 
 static void Network_Handle_ApplicationAndPlayerName(SLNet::Packet *p)
 {
+	char disconnectReason = -1;
 	SLNet::BitStream bitStream(p->data, p->length, false);
 	Network_Bitstream_SkipMessageId(&bitStream); //Ignore message id
+
+	//Note: This would be a good place to check if we allow any players to connect to the game (ie, we're in the middle of gameplay and we don't players to connect, even if it's a reconnecting player)
 
 	for(int i = 0; i < 3; i++) //In order, we're reading these strings: application name, application version, player name
 	{
@@ -240,7 +274,9 @@ static void Network_Handle_ApplicationAndPlayerName(SLNet::Packet *p)
 			|| (i == 1 && strcmp(applicationVersion, str) != 0))
 		{
 			delete[]str;
-			goto invalid_wrongversion;
+			disconnectReason = DISCONNECTREASON_WRONGVERSION;
+			PrintToConsole("Disconnected from new client as they're running the wrong version and/or application name.\n");
+			goto ask_player_to_leave;
 		}
 		else if(i == 2)
 		{
@@ -248,6 +284,17 @@ static void Network_Handle_ApplicationAndPlayerName(SLNet::Packet *p)
 			bitStream.Read(red);
 			bitStream.Read(green);
 			bitStream.Read(blue);
+
+			//Check if there's an active player with the new client's name. If found, we ask the player to leave as we don't allow multiple users with the same name
+			for(int j = 0; j < NETWORK_MAXCLIENTS; j++)
+			{
+				if(networkPlayers[j].state & NETWORKPLAYERSTATE_ACTIVE && !(networkPlayers[j].state & NETWORKPLAYERSTATE_DISCONNECTED) && strcmp(networkPlayers[j].name, str) == 0)
+				{
+					disconnectReason = DISCONNECTREASON_DUPLICATENAME;
+					PrintToConsole("Disconnected from new client as they've got the same name as another client.\n");
+					goto ask_player_to_leave;
+				}
+			}
 
 			//Check if this is a player who used to be connected
 			short playerId;
@@ -264,27 +311,34 @@ static void Network_Handle_ApplicationAndPlayerName(SLNet::Packet *p)
 				reconnectingPlayer = 1;
 				PrintToConsole("Reconnected player %s with networkId %llu, playerId %i, and colours %u %u %u\n", str, p->guid.g, playerId, red, green, blue);
 			}
-			else
+			
+			//Note: This would be a good place to check if we allow any non-reconnecting players to connect to the game (ie, we're in the middle of gameplay)
+
+			if(!reconnectingPlayer)
 				playerId = Network_GetUnusedPlayerId();
 
 			if(playerId == -1) //This is absurdly unlikely to happen
 			{
 				delete[]str;
-				goto invalid_cantaddmoreplayers;
+				disconnectReason = DISCONNECTREASON_OUTOFPLAYERIDS;
+				PrintToConsole("Disconnected from new client because we somehow ran out of player Ids.\n");
+				goto ask_player_to_leave;
 			}
 			if(!reconnectingPlayer)
 			{
 				if(!Network_AddPlayer(p->guid.g, playerId, str, red, green, blue)) //Add player
 				{
 					delete[]str;
-					goto invalid_cantaddmoreplayers;
+					disconnectReason = DISCONNECTREASON_OUTOFPLAYERIDS;
+					PrintToConsole("Disconnected from new client because networkPlayer array is full.\n");
+					goto ask_player_to_leave;
 				}
 			}
 			Network_Send_AddPlayer(p->guid, p->guid.g, playerId, str, red, green, blue, 1); //Let other clients know about this new player
 
-			for(int j = 0; j < MAXCLIENTS; j++) //Let the new player know about other clients (including ourself)
+			for(int j = 0; j < NETWORK_MAXCLIENTS; j++) //Let the new player know about other clients (including ourself)
 			{
-				if(networkPlayers[j].state == NETWORKPLAYERSTATE_ACTIVE && networkPlayers[j].networkId != p->guid.g)
+				if(networkPlayers[j].state & NETWORKPLAYERSTATE_ACTIVE && !(networkPlayers[j].state & NETWORKPLAYERSTATE_DISCONNECTED) && networkPlayers[j].networkId != p->guid.g)
 					Network_Send_AddPlayer(p->guid, networkPlayers[j].networkId, networkPlayers[j].id, networkPlayers[j].name, networkPlayers[j].red, networkPlayers[j].green, networkPlayers[j].blue, 0);
 			}
 
@@ -301,12 +355,8 @@ static void Network_Handle_ApplicationAndPlayerName(SLNet::Packet *p)
 	}
 	return;
 
-invalid_wrongversion:
-	Network_Send_AskPlayerToLeave_WrongVersion(p->guid);
-	return;
-
-invalid_cantaddmoreplayers:
-	Network_Send_AskPlayerToLeave_CantAddPlayer(p->guid);
+ask_player_to_leave:
+	Network_Send_AskPlayerToLeave(p->guid, disconnectReason);
 	return;
 }
 
@@ -325,7 +375,7 @@ void Network_Send_ApplicationAndPlayerName(SLNet::Packet *p) //This is sent by c
 	bitStream.Write(networkPlayers[0].green);
 	bitStream.Write(networkPlayers[0].blue);
 
-	Network_SendBitStream_DefaultPacketProperties(&bitStream, p->guid, false, CUSTOMPACKETID_APPLICATIONANDPLAYERNAME);
+	Network_SendBitStream_DefaultPacketProperties(&bitStream, CUSTOMPACKETID_APPLICATIONANDPLAYERNAME, p->guid, false);
 }
 
 static unsigned char *GetPacketIdentifierPointer(SLNet::Packet *p)
@@ -374,12 +424,12 @@ void Network_InitPacketTypeInfo()
 
 	//Define packet properties
 	DefinePacketTypeInfo(CUSTOMPACKETID_APPLICATIONANDPLAYERNAME, Network_Handle_ApplicationAndPlayerName, 0, RELIABLE_ORDERED, HIGH_PRIORITY);
-	DefinePacketTypeInfo(CUSTOMPACKETID_ASKPLAYERTODISCONNECT_WRONGVERSION, Network_Handle_AskPlayerToLeave_WrongVersion, 0, RELIABLE_ORDERED, HIGH_PRIORITY);
-	DefinePacketTypeInfo(CUSTOMPACKETID_ASKPLAYERTODISCONNECT_CANTADDPLAYER, Network_Handle_AskPlayerToLeave_CantAddPlayer, 0, RELIABLE_ORDERED, HIGH_PRIORITY);
+	DefinePacketTypeInfo(CUSTOMPACKETID_ASKPLAYERTODISCONNECT, Network_Handle_AskPlayerToLeave, 0, RELIABLE_ORDERED, HIGH_PRIORITY);
 	DefinePacketTypeInfo(CUSTOMPACKETID_ADDPLAYER, Network_Handle_AddPlayer, 0, RELIABLE_ORDERED, HIGH_PRIORITY);
 	DefinePacketTypeInfo(CUSTOMPACKETID_REMOVEPLAYER, Network_Handle_RemovePlayer, 0, RELIABLE_ORDERED, HIGH_PRIORITY);
 	DefinePacketTypeInfo(CUSTOMPACKETID_GIVENEWPLAYERID, Network_Handle_GiveNewPlayerTheirPlayerId, 0, RELIABLE_ORDERED, HIGH_PRIORITY);
 	DefinePacketTypeInfo(CUSTOMPACKETID_CHANGEPLAYERSGUID, Network_Handle_ChangePlayerGuid, 0, RELIABLE_ORDERED, HIGH_PRIORITY);
+	DefinePacketTypeInfo(CUSTOMPACKETID_PLAYERLEAVING, 0, 0, RELIABLE_ORDERED, HIGH_PRIORITY);
 
 	//Prince of Persia packets
 	DefinePacketTypeInfo(CUSTOMPACKETID_POP_KIDPOS, Network_Handle_KidPosition, 1, UNRELIABLE, IMMEDIATE_PRIORITY);

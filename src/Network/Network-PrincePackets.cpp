@@ -58,7 +58,7 @@ void Network_Send_KidPosition(unsigned char frame, unsigned char x, unsigned cha
 	bitStream.Write(fall_y);
 	bitStream.Write(repeat);
 	bitStream.Write(charid);
-	Network_SendBitStream_DefaultPacketProperties(&bitStream, SLNet::UNASSIGNED_RAKNET_GUID, 1, CUSTOMPACKETID_POP_KIDPOS);
+	Network_SendBitStream_DefaultPacketProperties(&bitStream, CUSTOMPACKETID_POP_KIDPOS, SLNet::UNASSIGNED_RAKNET_GUID, 1);
 }
 
 void Network_Handle_UpdatePlayerColor(SLNet::Packet *p)
@@ -86,5 +86,5 @@ void Network_Send_UpdatePlayerColor(unsigned long long networkId, unsigned char 
 	bitStream.Write(red);
 	bitStream.Write(green);
 	bitStream.Write(blue);
-	Network_SendBitStream_DefaultPacketProperties(&bitStream, SLNet::UNASSIGNED_RAKNET_GUID, 1, CUSTOMPACKETID_POP_UPDATEPLAYERCOLOR);
+	Network_SendBitStream_DefaultPacketProperties(&bitStream, CUSTOMPACKETID_POP_UPDATEPLAYERCOLOR, SLNet::UNASSIGNED_RAKNET_GUID, 1);
 }

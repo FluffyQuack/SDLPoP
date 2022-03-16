@@ -34,7 +34,7 @@ void Network_Intermediate_Start(int networkStart, int port, char *ip, char *name
 	if(ip)
 		strcpy_s(network_ip, NETWORKIP_LENGTH, ip);
 	if(name)
-		strcpy_s(networkPlayers[0].name, MAXPLAYERNAME, name);
+		strcpy_s(networkPlayers[0].name, NETWORK_MAXPLAYERNAME, name);
 	networkPlayers[0].red = colourRed;
 	networkPlayers[0].green = colourGreen;
 	networkPlayers[0].blue = colourBlue;
@@ -63,7 +63,7 @@ void Network_Intermediate_SendPrinceData(unsigned char frame, unsigned char x, u
 
 bool Network_Intermediate_GetPrinceData(int playerNum, unsigned char *frame, unsigned char *x, unsigned char *y, char *direction, unsigned char *room, char *alive, unsigned short *curr_seq, unsigned char *sword, unsigned short *current_level, char *curr_col, char *curr_row, unsigned char *action, char *fall_x, char *fall_y, unsigned char *repeat, unsigned char *charid)
 {
-	if(playerNum >= 0 && playerNum < MAXCLIENTS && Network_ConnectedToAnyClient() && networkPlayers[playerNum].state == NETWORKPLAYERSTATE_ACTIVE)
+	if(playerNum >= 0 && playerNum < NETWORK_MAXCLIENTS && Network_ConnectedToAnyClient() && networkPlayers[playerNum].state == NETWORKPLAYERSTATE_ACTIVE)
 	{
 		networkPlayer_s *player = &networkPlayers[playerNum];
 		*frame = player->frame;
@@ -89,7 +89,7 @@ bool Network_Intermediate_GetPrinceData(int playerNum, unsigned char *frame, uns
 
 void Network_Intermediate_GetPlayerColours(int playerNum, unsigned char *r, unsigned char *g, unsigned char *b)
 {
-	if(playerNum >= 0 && playerNum < MAXCLIENTS && (playerNum == 0 || Network_ConnectedToAnyClient()) && networkPlayers[playerNum].state == NETWORKPLAYERSTATE_ACTIVE)
+	if(playerNum >= 0 && playerNum < NETWORK_MAXCLIENTS && (playerNum == 0 || Network_ConnectedToAnyClient()) && networkPlayers[playerNum].state == NETWORKPLAYERSTATE_ACTIVE)
 	{
 		networkPlayer_s *player = &networkPlayers[playerNum];
 		*r = player->red;
@@ -102,7 +102,7 @@ void Network_Intermediate_GetPlayerColours(int playerNum, unsigned char *r, unsi
 
 char *Network_Intermediate_GetPlayerName(int playerNum)
 {
-	if(playerNum >= 0 && playerNum < MAXCLIENTS /*&& (playerNum == 0 || Network_ConnectedToAnyClient())*/ && networkPlayers[playerNum].state == NETWORKPLAYERSTATE_ACTIVE)
+	if(playerNum >= 0 && playerNum < NETWORK_MAXCLIENTS /*&& (playerNum == 0 || Network_ConnectedToAnyClient())*/ && networkPlayers[playerNum].state == NETWORKPLAYERSTATE_ACTIVE)
 		return networkPlayers[playerNum].name;
 	return 0;
 }

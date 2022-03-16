@@ -2735,7 +2735,7 @@ void draw_overlay(void) {
 
 			//TODO: This code is unfinished
 			int j = 0;
-			for(int i = 0; i < MAXCLIENTS; i++)
+			for(int i = 0; i < NETWORK_MAXCLIENTS; i++)
 			{
 				char timer_text[100] = {0};
 				char *playerName = Network_Intermediate_GetPlayerName(i);
