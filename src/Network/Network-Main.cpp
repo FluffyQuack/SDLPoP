@@ -53,6 +53,8 @@ void Network_Initialize()
 
 void Network_Deinitialize()
 {
+	if(network_status != NETWORKSTATUS_OFF)
+		Network_Stop();
 	if(peer == 0)
 		return;
 	SLNet::RakPeerInterface::DestroyInstance(peer);
