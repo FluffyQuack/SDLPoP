@@ -5,9 +5,9 @@
 enum
 {
 	NETWORKPLAYERSTATE_UNUSED = 0, //Player slot that has never been used
-	NETWORKPLAYERSTATE_ACTIVE = 1 << 0, //Player slot that is currently in use by a connected client
-	NETWORKPLAYERSTATE_DISCONNECTED = 1 << 1, //Player slot that was used but the client is currently disconnected (this is used to retain data for clients who might reconnect, and we only use this for a new client if there's no other unused slots left) (this value and behaviour is only handled by the host; clients aren't aware of the difference between a remote client connecting and reconnecting)
-	NETWORKPLAYERSTATE_ABOUTTOLEAVE = 1 << 2, //Player that has sent a message indicating they're about to leave the server (only the host ever handles this value)
+	NETWORKPLAYERSTATE_ACTIVE = (1 << 0), //Player slot that is currently in use by a connected client
+	NETWORKPLAYERSTATE_DISCONNECTED = (1 << 1), //Player slot that was used but the client is currently disconnected (this is used to retain data for clients who might reconnect, and we only use this for a new client if there's no other unused slots left) (this value and behaviour is only handled by the host; clients aren't aware of the difference between a remote client connecting and reconnecting)
+	NETWORKPLAYERSTATE_ABOUTTOLEAVE = (1 << 2), //Player that has sent a message indicating they're about to leave the server (only the host ever handles this value)
 };
 
 struct networkPlayer_s
