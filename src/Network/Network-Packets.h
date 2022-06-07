@@ -34,7 +34,6 @@ unsigned short Network_GetPacketIdBytesFromCustomId(unsigned short customId);
 void Network_Bitstream_SkipMessageId(SLNet::BitStream *bitStream);
 void Network_Bitstream_WriteMessageId(SLNet::BitStream *bitStream, unsigned short realId);
 void Network_Send_ChangePlayerGuid(unsigned long long oldGuid, unsigned long long newGuid);
-void Network_Send_LeaveNotification();
 void Network_Send_RemovePlayer(SLNet::RakNetGUID guid, unsigned long long id, bool broadcast);
 void Network_Send_ApplicationAndPlayerName(SLNet::Packet *p);
 void Network_HandleCustomPacketType(SLNet::Packet *p);

@@ -168,13 +168,6 @@ void Network_Handle_LeaveNotification(SLNet::Packet *p)
 		player->state |= NETWORKPLAYERSTATE_ABOUTTOLEAVE;
 }
 
-void Network_Send_LeaveNotification()
-{
-	SLNet::BitStream bitStream;
-	Network_Bitstream_WriteMessageId(&bitStream, CUSTOMPACKETID_PLAYERLEAVING);
-	Network_SendBitStream_DefaultPacketProperties(&bitStream, CUSTOMPACKETID_PLAYERLEAVING, SLNet::UNASSIGNED_RAKNET_GUID, 1);
-}
-
 void Network_Handle_RemovePlayer(SLNet::Packet *p)
 {
 	SLNet::BitStream bitStream(p->data, p->length, false);

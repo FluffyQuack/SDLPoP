@@ -175,7 +175,7 @@ void Network_Stop()
 	PrintToConsole("Attempting to shut down network.\n");
 
 	if(network_status == NETWORKSTATUS_CLIENT_CONNECTED) //If we're a client, then send a packet to host telling them we're leaving
-		Network_Send_LeaveNotification();
+		Network_SendPacket_MessageIdOnly_DefaultPacketProperties(CUSTOMPACKETID_PLAYERLEAVING);
 
 	if(network_status != NETWORKSTATUS_OFF)
 		peer->Shutdown(1000);
@@ -189,6 +189,32 @@ void Network_Stop()
 	Network_ResetPlayers(0, 1);
 	network_clientsConnectedTo = 0;
 	network_scheduleTermination = 0;
+}
+
+void Network_SendPacket_MessageIdOnly(unsigned short messageId, SLNet::AddressOrGUID destination, bool broadcast, PacketReliability reliability, PacketPriority priority, char orderingchannel) //This is a convenient function for when we want to send a packet that contains a message ID and nothing else
+{
+	if(network_status == NETWORKSTATUS_OFF || network_status == NETWORKSTATUS_CLIENT_JOINING || peer == 0 || network_clientsConnectedTo == 0)
+	{
+		StatusUpdate("Network_SendPacket_MessageIdOnly() was called while not connected to any client.\n");
+		return;
+	}
+
+	SLNet::BitStream bitStream;
+	Network_Bitstream_WriteMessageId(&bitStream, messageId);
+	Network_SendBitStream(&bitStream, destination, broadcast, reliability, priority, orderingchannel);
+}
+
+void Network_SendPacket_MessageIdOnly_DefaultPacketProperties(unsigned short messageId, SLNet::AddressOrGUID destination, bool broadcast) //Variant of above with default packet properties
+{
+	if(network_status == NETWORKSTATUS_OFF || network_status == NETWORKSTATUS_CLIENT_JOINING || peer == 0 || network_clientsConnectedTo == 0)
+	{
+		StatusUpdate("Network_SendPacket_MessageIdOnly_DefaultPacketProperties() was called while not connected to any client.\n");
+		return;
+	}
+
+	SLNet::BitStream bitStream;
+	Network_Bitstream_WriteMessageId(&bitStream, messageId);
+	Network_SendBitStream_DefaultPacketProperties(&bitStream, messageId, destination, broadcast);
 }
 
 void Network_SendPacket(const char *data , int packetsize, SLNet::AddressOrGUID destination, bool broadcast, PacketReliability reliability, PacketPriority priority, char orderingchannel)
