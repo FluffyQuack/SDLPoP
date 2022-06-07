@@ -155,10 +155,12 @@ void Network_WeGotAcceptedIntoServer(int playerId) //We got accepted into the se
 	//Note: If necessary, send packets to server about entities owned by us so they can exist on all client game simulations
 }
 
-void Network_TemporarilySetOurPlayerIdToInvalid() //This happens as we try to join a server where we temporarily set our player id to -2 while waiting for a new id. Only used by clients.
+void Network_TemporarilySetOurPlayerIdToInvalid() //This happens as we try to join a server where we temporarily set our player id to PLAYERID_INVALID_MIDWAYCONNECTED while waiting for a new id. Only used by clients.
 {
-	//Note: If necessary, update entities owned by us to use temporary player id
-	networkPlayers[0].id = -2;
+	//Note: It is HIGHLY recommended the entire gameplay simulation is paused while playerId is invalid (below 0). This is because we are technically connected at this point, but we don't have our real player id,
+	// 	    so updating and creation of entities become a more complicated matter.
+	//Note: If necessary, update entities owned by us to use temporary player id, that way we can update them to our real playerId later (if we keep them at 0, we can't tell them apart from the host's entities)
+	networkPlayers[0].id = PLAYERID_INVALID_MIDWAYCONNECTED;
 }
 
 void Network_NewPlayerConnected(SLNet::RakNetGUID guid) //This is called whenever a new player is added to the game. Only used by host.
