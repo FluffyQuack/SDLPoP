@@ -1829,7 +1829,7 @@ void __pascal far add_objtable(byte obj_type) {
 	entry_addr->y = obj_y;
 
 	//Fluffy (Multiplayer): We adjust the position of network players here slightly so it looks like they're higher up or lower down on tiles compared to the local player (local player is always on the default "middle" lane)
-	//TODO: After we changing xl and xh the right way?
+	//TODO: Are we changing xl and xh the right way?
 	if(currentlyAddingPrince != -1)
 	{
 		entry_addr->y += (currentlyAddingPrince % 6) - 3;
