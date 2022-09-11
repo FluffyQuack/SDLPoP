@@ -195,7 +195,7 @@ void Network_SendPacket_MessageIdOnly(unsigned short messageId, SLNet::AddressOr
 {
 	if(network_status == NETWORKSTATUS_OFF || network_status == NETWORKSTATUS_CLIENT_JOINING || peer == 0 || network_clientsConnectedTo == 0)
 	{
-		StatusUpdate("Network_SendPacket_MessageIdOnly() was called while not connected to any client.\n");
+		PrintToConsole("Network_SendPacket_MessageIdOnly() was called while not connected to any client.\n");
 		return;
 	}
 
@@ -208,7 +208,7 @@ void Network_SendPacket_MessageIdOnly_DefaultPacketProperties(unsigned short mes
 {
 	if(network_status == NETWORKSTATUS_OFF || network_status == NETWORKSTATUS_CLIENT_JOINING || peer == 0 || network_clientsConnectedTo == 0)
 	{
-		StatusUpdate("Network_SendPacket_MessageIdOnly_DefaultPacketProperties() was called while not connected to any client.\n");
+		PrintToConsole("Network_SendPacket_MessageIdOnly_DefaultPacketProperties() was called while not connected to any client.\n");
 		return;
 	}
 
