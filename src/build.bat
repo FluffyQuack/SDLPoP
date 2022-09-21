@@ -54,7 +54,7 @@ set PreprocessorDefinitions=
 :compile
 set SourceFiles= main.c data.c seg000.c seg001.c seg002.c seg003.c seg004.c seg005.c seg006.c seg007.c seg008.c seg009.c seqtbl.c replay.c options.c lighting.c screenshot.c menu.c midi.c opl3.c stb_vorbis.c Print.cpp Network\Network-Main.cpp Network\Network-Packets.cpp Network\Network-Player.cpp Network\Network-Intermediate.cpp Network\Network-PrincePackets.cpp
 set CommonCompilerFlags= /nologo /MP /fp:fast /GR- /wd4048 %PreprocessorDefinitions% /I"%SDL2%\include\SDL2" /I"%SDL2_Image%\include\SDL2"
-set CommonLinkerFlags= /subsystem:windows,5.01 /libpath:"%SDL2%\lib\" /libpath:"%SDL2_Image%\lib\" /libpath:"%SDL2%\lib\manual-link\" Shell32.lib SDL2main.lib SDL2.lib SDL2_image.lib icon.res /out:d:\spill\sdlpop\prince-fluffymod.exe
+set CommonLinkerFlags= /subsystem:windows,5.01 /libpath:"%SDL2%\lib\" /libpath:"%SDL2_Image%\lib\" /libpath:"%SDL2%\lib\manual-link\" Shell32.lib SDL2main.lib SDL2.lib SDL2_image.lib icon.res /out:\"d:\spill\Prince of Persia\sdlpop\prince-fluffymod.exe\"
 
 rc /nologo /fo icon.res icon.rc
 cl %BuildTypeCompilerFlags% %CommonCompilerFlags% %SourceFiles% /link %CommonLinkerFlags%

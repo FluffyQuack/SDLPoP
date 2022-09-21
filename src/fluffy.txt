@@ -2,7 +2,7 @@ Progress trying to make this build:
 - Added two BATs for compiling
 - Start a command prompt instance in this directory
 - Run fluffy-build-step1.bat
-- Run fluffy-build-step2.bat
+- Run fluffy-build-step2.bat (add debug or release as argument)
 
 Edits required:
 - Edited two lines in build.bat to be like this:
