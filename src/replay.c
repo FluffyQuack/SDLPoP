@@ -1,6 +1,6 @@
 /*
 SDLPoP, a port/conversion of the DOS game Prince of Persia.
-Copyright (C) 2013-2021  Dávid Nagy
+Copyright (C) 2013-2022  Dávid Nagy
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -82,7 +82,8 @@ typedef struct replay_info_type {
 
 #define REPLAY_HEADER_ERROR_MESSAGE_MAX 512
 
-#define fread_check(dst, size, elements, fp)	do {		\
+#define fread_check(dst, size, elements, fp)	\
+	do {		\
 		size_t __count;					\
 		__count = fread(dst, size, elements, fp);	\
 		if (__count != (elements)) {			\
@@ -90,8 +91,8 @@ typedef struct replay_info_type {
 				snprintf_check(error_message, REPLAY_HEADER_ERROR_MESSAGE_MAX,\
 					       #dst " missing -- not a valid replay file!");\
 			}					\
-                return 0; /* incompatible file */		\
-                }						\
+			return 0; /* incompatible file */		\
+		}						\
 	} while (0)
 
 int read_replay_header(replay_header_type* header, FILE* fp, char* error_message) {
@@ -258,7 +259,7 @@ void change_working_dir_to_sdlpop_root(void) {
 	char* exe_path = g_argv[0];
 	// strip away everything after the last slash or backslash in the path
 	int len;
-	for (len = strlen(exe_path); len > 0; --len) {
+	for (len = (int)strlen(exe_path); len > 0; --len) {
 		if (exe_path[len] == '\\' || exe_path[len] == '/') {
 			break;
 		}
@@ -332,6 +333,7 @@ void options_process_enhancements(SDL_RWops* rw, rw_process_func_type process_fu
 	process(fixes_options_replay.enable_freeze_time_during_end_music);
 	process(fixes_options_replay.enable_remember_guard_hp);
 	process(fixes_options_replay.enable_super_high_jump);
+	process(fixes_options_replay.enable_jump_grab);
 }
 
 void options_process_fixes(SDL_RWops* rw, rw_process_func_type process_func) {
@@ -370,6 +372,9 @@ void options_process_fixes(SDL_RWops* rw, rw_process_func_type process_func) {
 	process(fixes_options_replay.fix_quicksave_during_feather);
 	process(fixes_options_replay.fix_caped_prince_sliding_through_gate);
 	process(fixes_options_replay.fix_doortop_disabling_guard);
+	process(fixes_options_replay.fix_jumping_over_guard);
+	process(fixes_options_replay.fix_drop_2_rooms_climbing_loose_tile);
+	process(fixes_options_replay.fix_falling_through_floor_during_sword_strike);
 }
 
 void options_process_custom_general(SDL_RWops* rw, rw_process_func_type process_func) {
@@ -443,6 +448,10 @@ void options_process_custom_general(SDL_RWops* rw, rw_process_func_type process_
 	process(custom->win_level);
 	process(custom->win_room);
 	process(custom->loose_floor_delay);
+	process(custom->shadow_steal_level);
+	process(custom->shadow_steal_room);
+	process(custom->shadow_step_level);
+	process(custom->shadow_step_room);
 }
 
 void options_process_custom_per_level(SDL_RWops* rw, rw_process_func_type process_func) {
@@ -476,7 +485,7 @@ replay_options_section_type replay_options_sections[] = {
 
 // output the current options to a memory buffer (e.g. to remember them before a replay is loaded)
 size_t save_options_to_buffer(void* options_buffer, size_t max_size, process_options_section_func_type* process_section_func) {
-	SDL_RWops* rw = SDL_RWFromMem(options_buffer, max_size);
+	SDL_RWops* rw = SDL_RWFromMem(options_buffer, (int)max_size);
 	process_section_func(rw, process_rw_write);
 	Sint64 section_size = SDL_RWtell(rw);
 	if (section_size < 0) section_size = 0;
@@ -486,7 +495,7 @@ size_t save_options_to_buffer(void* options_buffer, size_t max_size, process_opt
 
 // restore the options from a memory buffer (e.g. reapply the original options after a replay is finished)
 void load_options_from_buffer(void* options_buffer, size_t options_size, process_options_section_func_type* process_section_func) {
-	SDL_RWops* rw = SDL_RWFromMem(options_buffer, options_size);
+	SDL_RWops* rw = SDL_RWFromMem(options_buffer, (int)options_size);
 	process_section_func(rw, process_rw_read);
 	SDL_RWclose(rw);
 }
@@ -799,7 +808,7 @@ int save_recorded_replay_dialog() {
 
 	// NOTE: We currently overwrite the replay file if it exists already. Maybe warn / ask for confirmation??
 
- return save_recorded_replay(full_filename);
+	return save_recorded_replay(full_filename);
 }
 
 int save_recorded_replay(const char* full_filename)
@@ -813,19 +822,23 @@ int save_recorded_replay(const char* full_filename)
 		Sint64 seconds = time(NULL);
 		fwrite(&seconds, sizeof(seconds), 1, replay_fp);
 		// levelset_name
-		putc(strnlen(levelset_name, UINT8_MAX), replay_fp); // length of the levelset name (is zero for original levels)
+		putc((int)strnlen(levelset_name, UINT8_MAX), replay_fp); // length of the levelset name (is zero for original levels)
 		fputs(levelset_name, replay_fp);
 		// implementation name
-		putc(strnlen(implementation_name, UINT8_MAX), replay_fp);
+		putc((int)strnlen(implementation_name, UINT8_MAX), replay_fp);
 		fputs(implementation_name, replay_fp);
 		// embed a savestate into the replay
 		fwrite(&savestate_size, sizeof(savestate_size), 1, replay_fp);
 		fwrite(savestate_buffer, savestate_size, 1, replay_fp);
 
+		// Save the current options (not the defaults) into the replay!
+		fixes_options_replay = fixes_saved;
+		//custom = &custom_saved;
+
 		// save the options, organized per section
 		byte temp_options[POP_MAX_OPTIONS_SIZE];
 		for (int i = 0; i < COUNT(replay_options_sections); ++i) {
-			dword section_size = save_options_to_buffer(temp_options, sizeof(temp_options), replay_options_sections[i].section_func);
+			dword section_size = (dword)save_options_to_buffer(temp_options, sizeof(temp_options), replay_options_sections[i].section_func);
 			fwrite(&section_size, sizeof(section_size), 1, replay_fp);
 			fwrite(temp_options, section_size, 1, replay_fp);
 		}

@@ -1,6 +1,6 @@
 /*
 SDLPoP, a port/conversion of the DOS game Prince of Persia.
-Copyright (C) 2013-2021  Dávid Nagy
+Copyright (C) 2013-2022  Dávid Nagy
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -32,10 +32,6 @@ The authors of this program may be contacted at https://forum.princed.org
 
 #define SDLPOP_VERSION "1.22 (FluffyMod v0.1)" //Fluffy
 #define WINDOW_TITLE "Prince of Persia (SDLPoP) v" SDLPOP_VERSION
-
-// Enable or disable the SDL hardware accelerated renderer backend
-// Uses a software backend otherwise
-#define USE_HW_ACCELERATION
 
 // Enable or disable fading.
 // Fading used to be very buggy, but now it works correctly.
@@ -269,11 +265,34 @@ The authors of this program may be contacted at https://forum.princed.org
 #define FIX_BLACK_RECT
 // TODO: Also fix the shadow not turning around and/or falling into the wall? Or would that break mods?
 
+// The prince can jump over a guard with a properly timed running jump.
+// His character's x coordinate ends up in the column behind the guard which causes the bump sequence
+// not to work correctly.
+#define FIX_JUMPING_OVER_GUARD
+
+// The prince can fall down 2 rooms while climbing a loose tile located in the room above. (Trick 153)
+// It happens when the player hangs on the loose tile holding Shift for a second before climbing up.
+// The fix ensures the tile does not start to fall until the climbing sequence changes prince's current row.
+// Testcase: doc/replays-testcases/trick_153.p1r
+// See also: https://github.com/NagyD/SDLPoP/pull/272
+#define FIX_DROP_2_ROOMS_CLIMBING_LOOSE_TILE
+
+// The prince or a guard can fall through a floor during a sword strike even though there is a floor tile in front of him.
+// A strike sequence consists of 4 important frames, 151-154. Frame 153 is different from the other 3 because has a flag
+// that it "needs a floor". The problem is strike frames a pretty wide so the character's tile is not calculated correctly
+// causing him to visually fall through the floor.
+// This fix prevents falling during that frame treating it like it does not require a floor.
+// Testcase: doc/replays-testcases/Falling through floor (PR274).p1r
+// See also: https://github.com/NagyD/SDLPoP/pull/274
+#define FIX_FALLING_THROUGH_FLOOR_DURING_SWORD_STRIKE
+
 #endif // ifndef DISABLE_ALL_FIXES
 
 // Prince can jump 2 stories up in feather fall mode
 #define USE_SUPER_HIGH_JUMP
 
+// Prince can grab tiles on the row above from a standing or a running jump
+#define USE_JUMP_GRAB
 
 // Debug features:
 

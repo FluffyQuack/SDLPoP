@@ -1,6 +1,6 @@
 /*
 SDLPoP, a port/conversion of the DOS game Prince of Persia.
-Copyright (C) 2013-2021  Dávid Nagy
+Copyright (C) 2013-2022  Dávid Nagy
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -28,16 +28,16 @@ extern "C" {
 #define STB_VORBIS_HEADER_ONLY
 #include "stb_vorbis.c"
 
-//#if !defined(_MSC_VER)
-//# include <SDL2/SDL.h>
-//# include <SDL2/SDL_image.h>
-//#else
+#if !defined(_MSC_VER)
+# include <SDL2/SDL.h>
+# include <SDL2/SDL_image.h>
+#else
 // These headers for SDL seem to be the pkgconfig/meson standard as per the
 // latest versions. If the old ones should be used, the ifdef must be used
 // to compare versions. 
 # include <SDL.h>
 # include <SDL_image.h>
-//#endif
+#endif
 
 #if SDL_BYTEORDER != SDL_LIL_ENDIAN
 #error This program is not (yet) prepared for big endian CPUs, please contact the author.
@@ -321,7 +321,7 @@ typedef struct char_type {
 	sbyte curr_row;
 	byte action;
 	sbyte fall_x;
-	sbyte fall_y;
+	sbyte fall_y; //Falling speed, but also used to check falling distance (less than 22 = one row, less than 33 = two rows)
 	byte room;
 	byte repeat;
 	byte charid;
@@ -532,20 +532,23 @@ typedef enum data_location {
 } data_location;
 
 enum sound_type {
-    sound_speaker = 0,
-    sound_digi = 1,
-    sound_midi = 2,
-    sound_chunk = 3,
-    sound_music = 4,
-    sound_ogg = 5,
+	sound_speaker = 0,
+	sound_digi = 1,
+	sound_midi = 2,
+	sound_chunk = 3,
+	sound_music = 4,
+	sound_ogg = 5,
 	sound_digi_converted = 6,
 };
+
 #pragma pack(push,1)
+
 typedef struct note_type {
 	word frequency; // 0x00 or 0x01 = rest, 0x12 = end
 	byte length;
 } note_type;
 SDL_COMPILE_TIME_ASSERT(note_type, sizeof(note_type) == 3);
+
 typedef struct speaker_type { // IBM
 	word tempo;
 	note_type notes[];
@@ -583,14 +586,13 @@ typedef struct midi_type {
 		} header;
 		byte data[0];
 	};
-
 } midi_type;
 
 typedef struct ogg_type {
-    //byte sample_size; // =16
-    int total_length;
-    byte* file_contents;
-    stb_vorbis* decoder;
+	//byte sample_size; // =16
+	int total_length;
+	byte* file_contents;
+	stb_vorbis* decoder;
 } ogg_type;
 
 typedef struct converted_audio_type {
@@ -605,7 +607,7 @@ typedef struct sound_buffer_type {
 		digi_type digi;
 		digi_new_type digi_new;
 		midi_type midi;
-        ogg_type ogg;
+		ogg_type ogg;
 		converted_audio_type converted;
 	};
 } sound_buffer_type;
@@ -623,8 +625,9 @@ typedef struct midi_raw_chunk_type {
 		} header;
 		byte data[0];
 	};
-
 } midi_raw_chunk_type;
+
+#pragma pack(pop)
 
 typedef struct midi_event_type {
 	dword delta_time;
@@ -663,6 +666,7 @@ typedef struct parsed_midi_type {
 } parsed_midi_type;
 
 #pragma pack(push, 1)
+
 typedef struct operator_type {
 	byte mul;
 	byte ksl_tl;
@@ -670,6 +674,7 @@ typedef struct operator_type {
 	byte s_r;
 	byte waveform;
 } operator_type;
+SDL_COMPILE_TIME_ASSERT(operator_type, sizeof(operator_type) == 5);
 
 typedef struct instrument_type {
 	byte blocknum_low;
@@ -679,6 +684,8 @@ typedef struct instrument_type {
 	byte percussion;
 	byte unknown[2];
 } instrument_type;
+SDL_COMPILE_TIME_ASSERT(instrument_type, sizeof(instrument_type) == 16);
+
 #pragma pack(pop)
 
 struct dialog_type; // (declaration only)
@@ -701,8 +708,6 @@ typedef struct dialog_type {
 	word has_peel;
 	peel_type* peel;
 } dialog_type;
-
-#pragma pack(pop)
 
 enum soundids {
 	sound_0_fell_to_death = 0,
@@ -1014,6 +1019,7 @@ enum seqids {
 	seq_6_run_turn = 6,
 	seq_7_fall = 7,
 	seq_8_jump_up_and_grab_straight = 8,
+	seq_9_grab_while_jumping = 9,
 	seq_10_climb_up = 10,
 	seq_11_release_ledge_and_land = 11,
 	seq_13_stop_run = 13,
@@ -1244,6 +1250,10 @@ typedef struct fixes_options_type {
 	byte fix_caped_prince_sliding_through_gate;
 	byte fix_doortop_disabling_guard;
 	byte enable_super_high_jump;
+	byte fix_jumping_over_guard;
+	byte fix_drop_2_rooms_climbing_loose_tile;
+	byte fix_falling_through_floor_during_sword_strike;
+	byte enable_jump_grab;
 } fixes_options_type;
 
 #define NUM_GUARD_SKILLS 12
@@ -1298,6 +1308,12 @@ typedef struct custom_options_type {
 	byte mirror_row;
 	byte mirror_tile;
 	byte show_mirror_image;
+
+	byte shadow_steal_level;
+	byte shadow_steal_room;
+	byte shadow_step_level;
+	byte shadow_step_room;
+
 	word falling_exit_level;
 	byte falling_exit_room;
 	word falling_entry_level;
@@ -1358,6 +1374,28 @@ typedef struct directory_listing_type directory_listing_type;
 #define BASE_FPS 60
 
 #define FEATHER_FALL_LENGTH 18.75
+
+enum
+{
+	EDGE_TYPE_CLOSER, // closer/sword/potion
+	EDGE_TYPE_EDGE, // edge
+	EDGE_TYPE_FLOOR, // floor (nothing near char)
+};
+
+#define TILE_SIZEX 14 // Horizontal size of tile in the internal coordinate system (a tile is 32 pixels wide in screen space)
+#define TILE_MIDX 7 // Middle horizontal point of a tile
+#define TILE_RIGHTX 13 // Right-most point of a tile
+#define TILE_SIZEY 63 // Vertical size of a tile (this also matches the pixel height of tiles in screen space)
+#define SCREENSPACE_X 58 // Position of the left-most pixel in screenspace in the internal coordinate system
+#define SCREEN_TILECOUNTX 10 // Quantity of columns of tiles visible in a room
+#define SCREEN_TILECOUNTY 3 // Quantity of rows of tiles visible in a room
+#define FIRST_ONSCREEN_COLUMN 5 // Used for referencing the first column visible in screen space in the x_bump array
+#define FALLING_SPEED_MAX 33
+#define FALLING_SPEED_ACCEL 3
+#define FALLING_SPEED_MAX_FEATHER 4
+#define FALLING_SPEED_ACCEL_FEATHER 1
+#define ROOMCOUNT 24 // Max quantity of rooms for any level
+#define SCREEN_GAMEPLAY_HEIGHT 192 // Portion of the screen space dedicated to gameplay graphics
 
 #endif
 

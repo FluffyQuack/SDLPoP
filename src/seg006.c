@@ -1,6 +1,6 @@
 /*
 SDLPoP, a port/conversion of the DOS game Prince of Persia.
-Copyright (C) 2013-2021  Dávid Nagy
+Copyright (C) 2013-2022  Dávid Nagy
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -637,7 +637,7 @@ void __pascal far play_seq() {
 #endif
 
 						if (is_sound_on) {
-							if (current_level == 4) {
+							if (current_level == /*4*/ custom->mirror_level) {
 								play_sound(sound_32_shadow_music); // end level with shadow (level 4)
 							} else if (current_level != 13 && current_level != 15) {
 								play_sound(sound_41_end_level_music); // end level
@@ -733,14 +733,14 @@ int __pascal far get_tile_div_mod(int xpos) {
 //	return tile_div_tbl[xpos];
 
 	// xpos uses a coordinate system in which the left edge of the screen is 58, and each tile is 14 units wide.
-	int x = xpos - 58;
-	int xl = x % 14;
-	int xh = x / 14;
+	int x = xpos - SCREENSPACE_X;
+	int xl = x % TILE_SIZEX;
+	int xh = x / TILE_SIZEX;
 	if (xl < 0) {
 		// Integer division rounds towards zero, but we want to round down.
 		--xh;
 		// Modulo returns a negative number if x is negative, but we want 0 <= xl < 14.
-		xl += 14;
+		xl += TILE_SIZEX;
 	}
 
 	// For compatibility with the DOS version, we allow for overflow access to these tables
@@ -761,18 +761,18 @@ int __pascal far get_tile_div_mod(int xpos) {
 	// Considering the case of positive overflow
 	int tblSize = 256;
 
- if (xpos >= tblSize) {
-  // In this case DOS PoP reads the bytes directly after tile_div_tbl[], that is: and tile_mod_tbl[]
-  // Here we simulate these reads.
-  // After tile_mod_tbl[] there are the following bytes:
-  static const byte bogus[] = {0xF4, 0x02, 0x10, 0x1E, 0x2C, 0x3A, 0x48, 0x56, 0x64, 0x72, 0x80, 0x8E, 0x9C, 0xAA, 0xB8, 0xC6, 0xD4, 0xE2, 0xF0, 0xFE, 0x00, 0x0A, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x0A, 0x0D, 0x00, 0x00, 0x00, 0x00};
-  if (xpos-tblSize < COUNT(bogus)) {
-   xh = tile_mod_tbl[xpos-tblSize]; // simulating tile_div_tbl[xpos]
-   xl = bogus[xpos-tblSize]; // simulating tile_mod_tbl[xpos]
-  } else {
-   printf("xpos = %d (> %d) out of range for simulation of index overflow!\n", xpos, (int)COUNT(bogus)+tblSize);
-  }
- }
+	if (xpos >= tblSize) {
+		// In this case DOS PoP reads the bytes directly after tile_div_tbl[], that is: and tile_mod_tbl[]
+		// Here we simulate these reads.
+		// After tile_mod_tbl[] there are the following bytes:
+		static const byte bogus[] = {0xF4, 0x02, 0x10, 0x1E, 0x2C, 0x3A, 0x48, 0x56, 0x64, 0x72, 0x80, 0x8E, 0x9C, 0xAA, 0xB8, 0xC6, 0xD4, 0xE2, 0xF0, 0xFE, 0x00, 0x0A, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x0A, 0x0D, 0x00, 0x00, 0x00, 0x00};
+		if (xpos-tblSize < COUNT(bogus)) {
+			xh = tile_mod_tbl[xpos-tblSize]; // simulating tile_div_tbl[xpos]
+			xl = bogus[xpos-tblSize]; // simulating tile_mod_tbl[xpos]
+		} else {
+			printf("xpos = %d (> %d) out of range for simulation of index overflow!\n", xpos, (int)COUNT(bogus)+tblSize);
+		}
+	}
 
 	obj_xl = xl;
 	return xh;
@@ -780,7 +780,7 @@ int __pascal far get_tile_div_mod(int xpos) {
 
 // seg006:0433
 int __pascal far y_to_row_mod4(int ypos) {
-	return (ypos + 60) / 63 % 4 - 1;
+	return (ypos + 60) / TILE_SIZEY % 4 - 1;
 }
 
 // seg006:044F
@@ -855,11 +855,11 @@ void __pascal far x_to_xh_and_xl(int xpos, sbyte *xh_addr, sbyte *xl_addr) {
 void __pascal far fall_accel() {
 	if (Char.action == actions_4_in_freefall) {
 		if (is_feather_fall) {
-			++Char.fall_y;
-			if (Char.fall_y > 4) Char.fall_y = 4;
+			Char.fall_y += FALLING_SPEED_ACCEL_FEATHER;
+			if (Char.fall_y > FALLING_SPEED_MAX_FEATHER) Char.fall_y = FALLING_SPEED_MAX_FEATHER;
 		} else {
-			Char.fall_y += 3;
-			if (Char.fall_y > 33) Char.fall_y = 33;
+			Char.fall_y += FALLING_SPEED_ACCEL;
+			if (Char.fall_y > FALLING_SPEED_MAX) Char.fall_y = FALLING_SPEED_MAX;
 		}
 	}
 }
@@ -884,6 +884,12 @@ void __pascal far check_action() {
 	short action;
 	action = Char.action;
 	frame = Char.frame;
+#ifdef USE_JUMP_GRAB
+    // Prince can grab tiles during a jump if Shift and up arrow, but not forward arrow, keys are pressed.
+    if (fixes->enable_jump_grab && action == actions_1_run_jump && control_shift < 0 && check_grab_run_jump()) {
+        return;
+    }
+#endif
 	// frame 109: crouching
 	if (action == actions_6_hang_straight ||
 		action == actions_5_bumped
@@ -1011,6 +1017,14 @@ void __pascal far set_char_collision() {
 // seg006:0815
 void __pascal far check_on_floor() {
 	if (cur_frame.flags & FRAME_NEEDS_FLOOR) {
+#ifdef FIX_FALLING_THROUGH_FLOOR_DURING_SWORD_STRIKE
+        // We do not want the Prince or a guard to fall during that frame because it looks like he is falling
+        // through a floor. It is caused by a combination of the frame width and the dx value in the frame table.
+        // Other 3 frames in the sequence do not have the "FRAME_NEEDS_FLOOR" flag enabled but the frame 153 does.
+        if (fixes->fix_falling_through_floor_during_sword_strike) {
+			if (Char.frame == frame_153_strike_3) return;
+        }
+#endif
 		if (get_tile_at_char() == tiles_20_wall) {
 			in_wall();
 		}
@@ -1156,7 +1170,7 @@ void __pascal far check_grab() {
 #ifdef USE_SUPER_HIGH_JUMP
 // delta_x makes grabbing easier
 #define SUPER_HIGH_JUMP_DELTA_X (Char.direction == dir_FF_left ? 3 : 5)
-        Char.x = char_dx_forward(-8 + (fixes->enable_super_high_jump && super_jump_fall ? SUPER_HIGH_JUMP_DELTA_X : 0));
+		Char.x = char_dx_forward(-8 + (fixes->enable_super_high_jump && super_jump_fall ? SUPER_HIGH_JUMP_DELTA_X : 0));
 #else
 		Char.x = char_dx_forward(-8);
 #endif
@@ -1182,6 +1196,68 @@ void __pascal far check_grab() {
 		}
 	}
 }
+
+#ifdef USE_JUMP_GRAB
+bool check_grab_run_jump() {
+    // grabbing distance:
+    // running jump - about 2.5 tiles or closer
+    // standing jump - just over 1 tile, enough to jump over an abyss/obstacle
+    word frame;
+    short grab_tile, grab_col;
+    short left_room, right_room, up_room;
+    bool is_jump, is_running_jump;
+    short char_room_m1;
+    frame = Char.frame;
+    is_jump = frame >= frame_22_standing_jump_7 && frame <= frame_23_standing_jump_8;
+    is_running_jump = frame >= frame_39_start_run_jump_6 && frame <= frame_41_running_jump_2;
+    char_room_m1 = Char.room - 1;
+    if (Char.action == actions_1_run_jump &&
+            (is_jump || is_running_jump) &&
+            control_x == 0 && control_y < 0) {
+        if (can_grab_front_above()) { // can grab a ledge at a specific frame during a jump
+            grab_tile = curr_tile2;
+            grab_col = tile_col;
+            // Prince's and tile rooms can get out of sync at the edge of a room
+            // causing teleportation.
+            if (curr_room != Char.room) {
+                left_room = level.roomlinks[char_room_m1].left;
+                right_room = level.roomlinks[char_room_m1].right;
+                up_room = level.roomlinks[char_room_m1].up;
+                if (curr_room == right_room) {
+                    grab_col += 10;
+                } else if (curr_room == left_room) {
+                    grab_col -= 10;
+                } else if (right_room && curr_room == level.roomlinks[right_room - 1].up) {
+                    grab_col += 10;
+                } else if (left_room && curr_room == level.roomlinks[left_room - 1].up) {
+                    grab_col -= 10;
+                } else if (up_room && curr_room == level.roomlinks[up_room - 1].right) {
+                    grab_col += 10;
+                } else if (up_room && curr_room == level.roomlinks[up_room - 1].left) {
+                    grab_col -= 10;
+                }
+            }
+            Char.x = x_bump[grab_col + FIRST_ONSCREEN_COLUMN] + TILE_MIDX;
+            Char.x = char_dx_forward(Char.direction == dir_FF_left ? -12 : 2);
+            Char.y = y_land[Char.curr_row + 1];
+            seqtbl_offset_char(seq_9_grab_while_jumping); // grab a ledge
+            play_seq();
+            grab_timer = 12;
+            play_sound(sound_9_grab); // grab
+            // check_press() is not going to work on the next frame if Shift is released immediately
+            // because Char.frame changes to frame_81_hangdrop_1.
+            if (grab_tile == tiles_15_opener || grab_tile == tiles_6_closer) {
+                trigger_button(1, 0, -1);
+            } else if (grab_tile == tiles_11_loose) {
+                is_guard_notice = 1;
+                make_loose_fall(1);
+            }
+            return 1;
+        }
+    }
+    return 0;
+}
+#endif
 
 // seg006:0ABD
 int __pascal far can_grab_front_above() {
@@ -1232,7 +1308,7 @@ int __pascal far distance_to_edge(int xpos) {
 	get_tile_div_mod_m7(xpos);
 	distance = obj_xl;
 	if (Char.direction == dir_0_right) {
-		distance = 13 - distance;
+		distance = TILE_RIGHTX - distance;
 	}
 	return distance;
 }

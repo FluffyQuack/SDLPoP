@@ -1,6 +1,6 @@
 /*
 SDLPoP, a port/conversion of the DOS game Prince of Persia.
-Copyright (C) 2013-2021  Dávid Nagy
+Copyright (C) 2013-2022  Dávid Nagy
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -233,10 +233,10 @@ void __pascal far spiked() {
 				spike_col -= 10;
 			}
 		}
-		Char.x = x_bump[spike_col + 5] + 10;
+		Char.x = x_bump[spike_col + FIRST_ONSCREEN_COLUMN] + 10;
 	} else {
 	#endif
-		Char.x = x_bump[tile_col + 5] + 10;
+		Char.x = x_bump[tile_col + FIRST_ONSCREEN_COLUMN] + 10;
 	#ifdef FIX_OFFSCREEN_GUARDS_DISAPPEARING
 	}
 	#endif
@@ -465,7 +465,7 @@ void __pascal far down_pressed() {
 
 // seg005:0574
 void __pascal far go_up_leveldoor() {
-	Char.x = x_bump[tile_col + 5] + 10;
+	Char.x = x_bump[tile_col + FIRST_ONSCREEN_COLUMN] + 10;
 	Char.direction = dir_FF_left; // right
 	seqtbl_offset_char(seq_70_go_up_on_level_door); // go up on level door
 }
@@ -530,7 +530,7 @@ void __pascal far forward_pressed() {
 	}
 	#endif
 
-	if (edge_type == 1 && curr_tile2 != tiles_18_chomper && distance < 8) {
+	if (edge_type == EDGE_TYPE_EDGE && curr_tile2 != tiles_18_chomper && distance < 8) {
 		// If char is near a wall, step instead of run.
 		if (control_forward < 0) {
 			safe_step();
@@ -565,7 +565,7 @@ void __pascal far safe_step() {
 	if (distance) {
 		Char.repeat = 1;
 		seqtbl_offset_char(distance + 28); // 29..42: safe step to edge
-	} else if (edge_type != 1 && Char.repeat != 0) {
+	} else if (edge_type != EDGE_TYPE_EDGE && Char.repeat != 0) {
 		Char.repeat = 0;
 		seqtbl_offset_char(seq_44_step_on_edge); // step on edge
 	} else {
@@ -598,7 +598,7 @@ void __pascal far get_item() {
 	short distance;
 	if (Char.frame != frame_109_crouch) { // crouching
 		distance = get_edge_distance();
-		if (edge_type != 2) {
+		if (edge_type != EDGE_TYPE_FLOOR) {
 			Char.x = char_dx_forward(distance);
 		}
 		if (Char.direction >= dir_0_right) {
@@ -677,7 +677,7 @@ void __pascal far jump_up_or_grab() {
 		grab_up_no_floor_behind();
 	} else {
 		// There is floor behind char, go back a bit.
-		Char.x = char_dx_forward(distance - 14);
+		Char.x = char_dx_forward(distance - TILE_SIZEX);
 		load_fram_det_col();
 		grab_up_with_floor_behind();
 	}
@@ -693,44 +693,51 @@ void __pascal far grab_up_no_floor_behind() {
 // seg005:08E6
 void __pascal far jump_up() {
 	short distance;
+	word delta_x;
 	control_up = release_arrows();
 	distance = get_edge_distance();
-	if (distance < 4 && edge_type == 1) {
+	if (distance < 4 && edge_type == EDGE_TYPE_EDGE) {
 		Char.x = char_dx_forward(distance - 3);
 	}
 	#ifdef FIX_JUMP_DISTANCE_AT_EDGE
 	// When climbing up two floors, turning around and jumping upward, the kid falls down.
 	// This fix makes the workaround of Trick 25 unnecessary.
-	if (fixes->fix_jump_distance_at_edge && distance == 3 && edge_type == 0) {
+	if (fixes->fix_jump_distance_at_edge && distance == 3 && edge_type == EDGE_TYPE_CLOSER) {
 		Char.x = char_dx_forward(-1);
 	}
 	#endif
 	#ifdef USE_SUPER_HIGH_JUMP
-    int char_col = get_tile_div_mod(back_delta_x(0) + dx_weight() - 6);
-    get_tile(Char.room, char_col, Char.curr_row - 1);
-    if (curr_tile2 != tiles_20_wall && ! tile_is_floor(curr_tile2)) {
-        if (fixes->enable_super_high_jump && is_feather_fall) { // super high jump can only happen in feather mode
-            if (curr_room == 0 && Char.curr_row == 0) { // there is no room above
-                seqtbl_offset_char(seq_14_jump_up_into_ceiling);
-            } else {
-                get_tile(Char.room, char_col, Char.curr_row - 2); // the target top tile
-                bool is_top_floor = tile_is_floor(curr_tile2) || curr_tile2 == tiles_20_wall;
-                if (is_top_floor && curr_tile2 == tiles_11_loose && (curr_room_tiles[curr_tilepos] & 0x20) == 0) {
-                    is_top_floor = false; // a regular loose floor above should not be treated as a floor
-                }
-                // kid should jump slightly higher if the top tile is not a floor
-                super_jump_timer = is_top_floor ? 22 : 24;
-                super_jump_room = curr_room;
-                super_jump_col = tile_col;
-                super_jump_row = tile_row;
-                seqtbl_offset_char(seq_48_super_high_jump); // jump up 2 rows with nothing above
-            }
-        } else {
-            seqtbl_offset_char(seq_28_jump_up_with_nothing_above); // jump up with nothing above
-        }
-    } else {
-        seqtbl_offset_char(seq_14_jump_up_into_ceiling); // jump up with wall or floor above
-    }
+	// kid should be able to grab 2 tiles above from an edge of a floor tile
+	if (is_feather_fall && !tile_is_floor(get_tile_above_char()) && curr_tile2 != tiles_20_wall) {
+		delta_x = Char.direction == dir_FF_left ? 1 : 3;
+	} else {
+		delta_x = 0;
+	}
+	int char_col = get_tile_div_mod(back_delta_x(delta_x) + dx_weight() - 6);
+	get_tile(Char.room, char_col, Char.curr_row - 1);
+	if (curr_tile2 != tiles_20_wall && !tile_is_floor(curr_tile2)) {
+		if (fixes->enable_super_high_jump && is_feather_fall) { // super high jump can only happen in feather mode
+			if (curr_room == 0 && Char.curr_row == 0) { // there is no room above
+				seqtbl_offset_char(seq_14_jump_up_into_ceiling);
+			} else {
+				get_tile(Char.room, char_col, Char.curr_row - 2); // the target top tile
+				bool is_top_floor = tile_is_floor(curr_tile2) || curr_tile2 == tiles_20_wall;
+				if (is_top_floor && curr_tile2 == tiles_11_loose && (curr_room_tiles[curr_tilepos] & 0x20) == 0) {
+					is_top_floor = false; // a regular loose floor above should not be treated as a floor
+				}
+				// kid should jump slightly higher if the top tile is not a floor
+				super_jump_timer = is_top_floor ? 22 : 24;
+				super_jump_room = curr_room;
+				super_jump_col = tile_col;
+				super_jump_row = tile_row;
+				seqtbl_offset_char(seq_48_super_high_jump); // jump up 2 rows with nothing above
+			}
+		} else {
+			seqtbl_offset_char(seq_28_jump_up_with_nothing_above); // jump up with nothing above
+		}
+	} else {
+		seqtbl_offset_char(seq_14_jump_up_into_ceiling); // jump up with wall or floor above
+	}
 	#else
 	get_tile(Char.room, get_tile_div_mod(back_delta_x(0) + dx_weight() - 6), Char.curr_row - 1);
 	if (curr_tile2 != tiles_20_wall && ! tile_is_floor(curr_tile2)) {
@@ -835,8 +842,8 @@ void __pascal far grab_up_with_floor_behind() {
 	// When climbing to a higher floor, the game unnecessarily checks how far away the edge below is;
 	// This contributes to sometimes "teleporting" considerable distances when climbing from firm ground
 	#define JUMP_STRAIGHT_CONDITION (fixes->fix_edge_distance_check_when_climbing)						\
-									? (distance < 4 && edge_type != 1)									\
-									: (distance < 4 && edge_distance < 4 && edge_type != 1)
+									? (distance < 4 && edge_type != EDGE_TYPE_EDGE)									\
+									: (distance < 4 && edge_distance < 4 && edge_type != EDGE_TYPE_EDGE)
 	#else
 	#define JUMP_STRAIGHT_CONDITION distance < 4 && edge_distance < 4 && edge_type != 1
 	#endif
@@ -852,24 +859,24 @@ void __pascal far grab_up_with_floor_behind() {
 
 // seg005:0AF7
 void __pascal far run_jump() {
-	short var_2;
+	short tiles_forward;
 	short xpos;
 	short col;
-	short var_8;
+	short pos_adjustment;
 	if (Char.frame >= frame_7_run) {
 		// Align Kid to edge of floor.
 		xpos = char_dx_forward(4);
 		col = get_tile_div_mod_m7(xpos);
-		for (var_2 = 0; var_2 < 2; ++var_2) {
+		for (tiles_forward = 0; tiles_forward < 2; ++tiles_forward) { // Iterate through current tile and the next two tiles looking for a tile the player should jump from
 			col += dir_front[Char.direction + 1];
 			get_tile(Char.room, col, Char.curr_row);
 			if (curr_tile2 == tiles_2_spike || ! tile_is_floor(curr_tile2)) {
-				var_8 = distance_to_edge(xpos) + 14 * var_2 - 14;
-				if ((word)var_8 < (word)-8 || var_8 >= 2) {
-					if (var_8 < 128) return;
-					var_8 = -3;
+				pos_adjustment = distance_to_edge(xpos) + TILE_SIZEX * tiles_forward - TILE_SIZEX;
+				if ((word)pos_adjustment < (word)-8 || pos_adjustment >= 2) {
+					if (pos_adjustment < 128) return;
+					pos_adjustment = -3;
 				}
-				Char.x = char_dx_forward(var_8 + 4);
+				Char.x = char_dx_forward(pos_adjustment + 4);
 				break;
 			}
 		}

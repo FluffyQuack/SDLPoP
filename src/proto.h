@@ -1,6 +1,6 @@
 /*
 SDLPoP, a port/conversion of the DOS game Prince of Persia.
-Copyright (C) 2013-2021  Dávid Nagy
+Copyright (C) 2013-2022  Dávid Nagy
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -356,6 +356,9 @@ void __pascal far add_sword_to_objtable(void);
 void __pascal far control_guard_inactive(void);
 int __pascal far char_opp_dist(void);
 void __pascal far inc_curr_row(void);
+#ifdef USE_JUMP_GRAB
+bool check_grab_run_jump(void);
+#endif
 
 // SEG007.C
 void __pascal far process_trobs(void);

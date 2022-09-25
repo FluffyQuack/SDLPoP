@@ -1,6 +1,6 @@
 /*
 SDLPoP, a port/conversion of the DOS game Prince of Persia.
-Copyright (C) 2013-2021  Dávid Nagy
+Copyright (C) 2013-2022  Dávid Nagy
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -86,6 +86,12 @@ void far pop_main() {
 	}
 #endif
 
+	// Initialize everything before load_mod_options() so it can show an error dialog if needed.
+	/*video_mode =*/ parse_grmode();
+	current_target_surface = rect_sthg(onscreen_surface_, &screen_rect);
+	set_hc_pal();
+	init_copyprot_dialog();
+
 	load_mod_options();
 
 	// CusPop option
@@ -98,14 +104,9 @@ void far pop_main() {
 	char sprintf_temp[100];
 	int i;
 
-	/*video_mode =*/ parse_grmode();
-
 	init_timer(BASE_FPS);
 	parse_cmdline_sound();
 
-	set_hc_pal();
-
-	current_target_surface = rect_sthg(onscreen_surface_, &screen_rect);
 	show_loading();
 	set_joy_mode();
 	cheats_enabled = check_param("megahit") != NULL;
@@ -116,7 +117,6 @@ void far pop_main() {
 	draw_mode = check_param("draw") != NULL && cheats_enabled;
 	demo_mode = check_param("demo") != NULL;
 
-	init_copyprot_dialog();
 #ifdef USE_REPLAY
 	init_record_replay();
 #endif
@@ -367,12 +367,14 @@ int quick_process(process_func_type process_func) {
 	process(torch_colors);
 #endif
 #ifdef USE_SUPER_HIGH_JUMP
-    process(super_jump_fall);
-    process(super_jump_timer);
-    process(super_jump_room);
-    process(super_jump_col);
-    process(super_jump_row);
+	process(super_jump_fall);
+	process(super_jump_timer);
+	process(super_jump_room);
+	process(super_jump_col);
+	process(super_jump_row);
 #endif
+	process(is_guard_notice);
+	process(can_guard_see_kid);
 #undef process
 	return ok;
 }
@@ -429,7 +431,7 @@ void restore_room_after_quick_load() {
 
 	//draw_level_first();
 	//gen_palace_wall_colors();
-	is_guard_notice = 0; // prevent guard turning around immediately
+	//is_guard_notice = 0; // prevent guard turning around immediately
 	draw_game_frame(); // for falling
 	//redraw_screen(1); // for room_L
 
@@ -760,8 +762,7 @@ int __pascal far process_key() {
 				answer_text = /*&*/sprintf_temp;
 				need_show_text = 1;
 			break;
-			case SDL_SCANCODE_MINUS:
-			case SDL_SCANCODE_KP_MINUS:		// '-' --> subtract time cheat
+			case SDL_SCANCODE_KP_MINUS: // '-' --> subtract time cheat
 				if (rem_min > 1) --rem_min;
 
 #ifdef ALLOW_INFINITE_TIME
@@ -773,8 +774,7 @@ int __pascal far process_key() {
 				text_time_remaining = 0;
 				is_show_time = 1;
 			break;
-			case SDL_SCANCODE_EQUALS | WITH_SHIFT: // '+'
-			case SDL_SCANCODE_KP_PLUS:	   // '+' --> add time cheat
+			case SDL_SCANCODE_KP_PLUS: // '+' --> add time cheat
 
 #ifdef ALLOW_INFINITE_TIME
 				if (rem_min < 0) { // if negative/infinite, time runs 'forward'
@@ -1379,7 +1379,7 @@ void reset_level_unused_fields(bool loading_clean_level) {
 	memset(level.fill_3, 0, sizeof(level.fill_3));
 
 	// level.used_rooms is 25 on some levels. Limit it to the actual number of rooms.
-	if (level.used_rooms > 24) level.used_rooms = 24;
+	if (level.used_rooms > ROOMCOUNT) level.used_rooms = ROOMCOUNT;
 
 	// For these fields, only use the bits that are actually used, and set the rest to zero.
 	// Good for repurposing the unused bits in the future.
@@ -2011,8 +2011,8 @@ void __pascal far copy_screen_rect(const rect_type far *source_rect_ptr) {
 	if (upside_down) {
 		target_rect_ptr = &target_rect;
 		/**target_rect_ptr*/target_rect = *source_rect_ptr;
-		/*target_rect_ptr->*/target_rect.top = 192 - source_rect_ptr->bottom;
-		/*target_rect_ptr->*/target_rect.bottom = 192 - source_rect_ptr->top;
+		/*target_rect_ptr->*/target_rect.top = SCREEN_GAMEPLAY_HEIGHT - source_rect_ptr->bottom;
+		/*target_rect_ptr->*/target_rect.bottom = SCREEN_GAMEPLAY_HEIGHT - source_rect_ptr->top;
 	} else {
 		target_rect_ptr = source_rect_ptr;
 	}

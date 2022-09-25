@@ -1,6 +1,6 @@
 /*
 SDLPoP, a port/conversion of the DOS game Prince of Persia.
-Copyright (C) 2013-2021  Dávid Nagy
+Copyright (C) 2013-2022  Dávid Nagy
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -78,10 +78,11 @@ void __pascal far check_shadow() {
 			do_init_shad(/*&*/custom->init_shad_12, 7 /*fall*/);
 			return;
 		}
-	} else if (current_level == 6) {
+	} /*else*/
+	if (current_level == /*6*/ custom->shadow_step_level) {
 		// Special event: level 6 shadow
 		Char.room = drawn_room;
-		if (Char.room == 1) {
+		if (Char.room == /*1*/ custom->shadow_step_room) {
 			if (leveldoor_open != 0x4D) {
 				play_sound(sound_25_presentation); // presentation (level 6 shadow)
 				leveldoor_open = 0x4D;
@@ -89,11 +90,12 @@ void __pascal far check_shadow() {
 			do_init_shad(/*&*/custom->init_shad_6, 2 /*stand*/);
 			return;
 		}
-	} else if (current_level == 5) {
+	} /*else*/
+	if (current_level == /*5*/ custom->shadow_steal_level) {
 		// Special event: level 5 shadow
 		Char.room = drawn_room;
-		if (Char.room == 24) {
-			if (get_tile(24, 3, 0) != tiles_10_potion) {
+		if (Char.room == /*24*/ custom->shadow_steal_room) {
+			if (get_tile(/*24*/ custom->shadow_steal_room, 3, 0) != tiles_10_potion) {
 				return;
 			}
 			do_init_shad(/*&*/custom->init_shad_5, 2 /*stand*/);
@@ -176,7 +178,7 @@ loc_left_guard_tile:
 #endif
 
 	Char.room = drawn_room;
-	Char.curr_row = guard_tile / 10;
+	Char.curr_row = guard_tile / SCREEN_TILECOUNTX;
 	Char.y = y_land[Char.curr_row + 1];
 	Char.x = level.guards_x[room_minus_1];
 	Char.curr_col = get_tile_div_mod_m7(Char.x);
@@ -252,8 +254,11 @@ void __pascal far check_guard_fallout() {
 		clear_char();
 		saveshad();
 	} else if (Guard.charid == charid_4_skeleton &&
-		(Guard.room = level.roomlinks[Guard.room - 1].down) == /*3*/ custom->skeleton_reappear_room) {
+		// should the level number be checked too?
+		level.roomlinks[Guard.room - 1].down == /*3*/ custom->skeleton_reappear_room
+	) {
 		// if skeleton falls down into room 3
+		Guard.room = level.roomlinks[Guard.room - 1].down;
 		Guard.x = /*133*/ custom->skeleton_reappear_x;
 		Guard.curr_row = /*1*/ custom->skeleton_reappear_row;
 		Guard.direction = /*dir_0_right*/ custom->skeleton_reappear_dir;
@@ -273,11 +278,11 @@ void __pascal far leave_guard() {
 	word room_minus_1;
 
 #ifdef USE_SUPER_HIGH_JUMP
-    // Do not leave guard during super high jumps when the room does not change.
-    // Kid's "y" coordinate keeps him in the lower room visually (in timers()).
-    if (fixes->enable_super_high_jump && super_jump_fall && drawn_room == next_room)	 {
-        return;
-    }
+	// Do not leave guard during super high jumps when the room does not change.
+	// Kid's "y" coordinate keeps him in the lower room visually (in timers()).
+	if (fixes->enable_super_high_jump && super_jump_fall && drawn_room == next_room)	 {
+		return;
+	}
 #endif
 
 	if (Guard.direction == dir_56_none || Guard.charid == charid_1_shadow || Guard.charid == charid_24_mouse) {
@@ -727,13 +732,16 @@ void __pascal far autocontrol_mouse() {
 
 // seg002:081D
 void __pascal far autocontrol_shadow() {
-	if (current_level == 4) {
+	if (current_level == /*4*/ custom->mirror_level) {
 		autocontrol_shadow_level4();
-	} else if (current_level == 5) {
+	} /*else*/
+	if (current_level == /*5*/ custom->shadow_steal_level) {
 		autocontrol_shadow_level5();
-	} else if (current_level == 6) {
+	} /*else*/
+	if (current_level == /*6*/ custom->shadow_step_level) {
 		autocontrol_shadow_level6();
-	} else if (current_level == 12) {
+	} /*else*/
+	if (current_level == 12) {
 		autocontrol_shadow_level12();
 	}
 }
@@ -990,15 +998,15 @@ void __pascal far hurt_by_sword() {
 					short gate_col = tile_col;
 					if (curr_room != Char.room)	{
 						if (curr_room == level.roomlinks[Char.room - 1].right) {
-							gate_col += 10;
+							gate_col += SCREEN_TILECOUNTX;
 						} else if (curr_room == level.roomlinks[Char.room - 1].left) {
-							gate_col -= 10;
+							gate_col -= SCREEN_TILECOUNTX;
 						}
 					}
-					Char.x = x_bump[gate_col - (curr_tile2 != tiles_4_gate) + 5] + 7;
+					Char.x = x_bump[gate_col - (curr_tile2 != tiles_4_gate) + FIRST_ONSCREEN_COLUMN] + TILE_MIDX;
 				} else {
 				#endif
-					Char.x = x_bump[tile_col - (curr_tile2 != tiles_4_gate) + 5] + 7;
+					Char.x = x_bump[tile_col - (curr_tile2 != tiles_4_gate) + FIRST_ONSCREEN_COLUMN] + TILE_MIDX;
 				#ifdef FIX_OFFSCREEN_GUARDS_DISAPPEARING
 				}
 				#endif
@@ -1128,7 +1136,7 @@ void __pascal far check_skel() {
 			Char.curr_row = /*1*/ custom->skeleton_row;
 			Char.y = y_land[Char.curr_row + 1];
 			Char.curr_col = /*5*/ custom->skeleton_column;
-			Char.x = x_bump[Char.curr_col + 5] + 14;
+			Char.x = x_bump[Char.curr_col + FIRST_ONSCREEN_COLUMN] + TILE_SIZEX;
 			Char.direction = dir_FF_left;
 			seqtbl_offset_char(seq_88_skel_wake_up); // skel wake up
 			play_seq();
@@ -1191,7 +1199,7 @@ void __pascal far do_auto_moves(const auto_move_type *moves_ptr) {
 
 // seg002:1000
 void __pascal far autocontrol_shadow_level4() {
-	if (Char.room == 4) {
+	if (Char.room == /*4*/ custom->mirror_room) {
 		if (Char.x < 80) {
 			clear_char();
 		} else {
@@ -1217,9 +1225,9 @@ const auto_move_type shad_drink_move[] = {
 
 // seg002:101A
 void __pascal far autocontrol_shadow_level5() {
-	if (Char.room == 24) {
+	if (Char.room == /*24*/ custom->shadow_steal_room) {
 		if (demo_time == 0) {
-			get_tile(24, 1, 0);
+			get_tile(/*24*/ custom->shadow_steal_room, 1, 0);
 			// is the door open?
 			if (curr_room_modif[curr_tilepos] < 80) return;
 			demo_index = 0;
@@ -1233,7 +1241,7 @@ void __pascal far autocontrol_shadow_level5() {
 
 // seg002:1064
 void __pascal far autocontrol_shadow_level6() {
-	if (Char.room == 1 &&
+	if (Char.room == /*1*/ custom->shadow_step_room &&
 		Kid.frame == frame_43_running_jump_4 && // a frame in run-jump
 		Kid.x < 128
 	) {

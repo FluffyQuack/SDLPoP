@@ -1,6 +1,6 @@
 /*
 SDLPoP, a port/conversion of the DOS game Prince of Persia.
-Copyright (C) 2013-2021  Dávid Nagy
+Copyright (C) 2013-2022  Dávid Nagy
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -149,6 +149,7 @@ enum setting_ids {
 	SETTING_JOYSTICK_THRESHOLD,
 	SETTING_JOYSTICK_ONLY_HORIZONTAL,
 	SETTING_FULLSCREEN,
+	SETTING_USE_HARDWARE_ACCELERATION,
 	SETTING_USE_CORRECT_ASPECT_RATIO,
 	SETTING_USE_INTEGER_SCALING,
 	SETTING_SCALING_TYPE,
@@ -199,7 +200,11 @@ enum setting_ids {
 	SETTING_FIX_QUICKSAVE_DURING_FEATHER,
 	SETTING_FIX_CAPED_PRINCE_SLIDING_THROUGH_GATE,
 	SETTING_FIX_DOORTOP_DISABLING_GUARD,
-	SETTING_enable_super_high_jump,
+	SETTING_FIX_JUMPING_OVER_GUARD,
+	SETTING_FIX_DROP_2_ROOMS_CLIMBING_LOOSE_TILE,
+	SETTING_FIX_FALLING_THROUGH_FLOOR_DURING_SWORD_STRIKE,
+	SETTING_ENABLE_SUPER_HIGH_JUMP,
+	SETTING_ENABLE_JUMP_GRAB,
 	SETTING_USE_CUSTOM_OPTIONS,
 	SETTING_START_MINUTES_LEFT,
 	SETTING_START_TICKS_LEFT,
@@ -249,6 +254,12 @@ enum setting_ids {
 	SETTING_MIRROR_ROW,
 	SETTING_MIRROR_TILE,
 	SETTING_SHOW_MIRROR_IMAGE,
+
+	SETTING_SHADOW_STEAL_LEVEL,
+	SETTING_SHADOW_STEAL_ROOM,
+	SETTING_SHADOW_STEP_LEVEL,
+	SETTING_SHADOW_STEP_ROOM,
+
 	SETTING_FALLING_EXIT_LEVEL,
 	SETTING_FALLING_EXIT_ROOM,
 	SETTING_FALLING_ENTRY_LEVEL,
@@ -327,6 +338,7 @@ setting_type general_settings[] = {
 				.text = "Restore defaults...", .explanation = "Revert all settings to the default state."},
 };
 
+NAMES_LIST(use_hardware_acceleration_setting_names, {"OFF", "ON", "AUTO",});
 NAMES_LIST(scaling_type_setting_names, {"Sharp", "Fuzzy", "Blurry",});
 
 int integer_scaling_possible =
@@ -341,6 +353,13 @@ setting_type visuals_settings[] = {
 		{.id = SETTING_FULLSCREEN, .style = SETTING_STYLE_TOGGLE, .linked = &start_fullscreen,
 				.text = "Start fullscreen",
 				.explanation = "Start the game in fullscreen mode.\nYou can also toggle fullscreen by pressing Alt+Enter."},
+		{.id = SETTING_USE_HARDWARE_ACCELERATION, .style = SETTING_STYLE_NUMBER, .number_type = SETTING_BYTE, .max = 2,
+				.linked = &use_hardware_acceleration, .names_list = &use_hardware_acceleration_setting_names_list,
+				.text = "Use hardware acceleration",
+				.explanation = "Auto - Use hardware acceleration, if available.\n"
+				               "On - Force hardware acceleration.\n"
+				               "Off - Disable hardware acceleration.\n"
+				               "Note: This requires a restart."},
 		{.id = SETTING_USE_CORRECT_ASPECT_RATIO, .style = SETTING_STYLE_TOGGLE, .linked = &use_correct_aspect_ratio,
 				.text = "Use 4:3 aspect ratio",
 				.explanation = "Render the game in the originally intended 4:3 aspect ratio."
@@ -419,10 +438,15 @@ setting_type gameplay_settings[] = {
 				.linked = &fixes_saved.enable_remember_guard_hp, .required = &use_fixes_and_enhancements,
 				.text = "Remember guard hitpoints",
 				.explanation = "Enable guard hitpoints not resetting to their default (maximum) value when re-entering the room."},
-		{.id = SETTING_enable_super_high_jump, .style = SETTING_STYLE_TOGGLE,
+		{.id = SETTING_ENABLE_SUPER_HIGH_JUMP, .style = SETTING_STYLE_TOGGLE,
 				.linked = &fixes_saved.enable_super_high_jump, .required = &use_fixes_and_enhancements,
 				.text = "Enable super high jump",
 				.explanation = "Prince in feather mode (after drinking a green potion) can jump 2 stories high."},
+		{.id = SETTING_ENABLE_JUMP_GRAB, .style = SETTING_STYLE_TOGGLE,
+				.linked = &fixes_saved.enable_jump_grab, .required = &use_fixes_and_enhancements,
+				.text = "Enable jump grab",
+				.explanation = "Prince can grab tiles on the floor above while jumping. "
+                               "Hold Shift and up arrow, but not the forward arrow key."},
 		{.id = SETTING_FIX_GATE_SOUNDS, .style = SETTING_STYLE_TOGGLE,
 				.linked = &fixes_saved.fix_gate_sounds, .required = &use_fixes_and_enhancements,
 				.text = "Fix gate sounds bug",
@@ -567,6 +591,18 @@ setting_type gameplay_settings[] = {
 				.linked = &fixes_saved.fix_doortop_disabling_guard, .required = &use_fixes_and_enhancements,
 				.text = "Fix door top disabling guard",
 				.explanation = "Guards become inactive if they are standing on a door top (with floor), or if the prince is standing on a door top."},
+		{.id = SETTING_FIX_JUMPING_OVER_GUARD, .style = SETTING_STYLE_TOGGLE,
+				.linked = &fixes_saved.fix_jumping_over_guard, .required = &use_fixes_and_enhancements,
+				.text = "Fix jumping over guard",
+				.explanation = "Prince can jump over guards with a properly timed running jump."},
+		{.id = SETTING_FIX_DROP_2_ROOMS_CLIMBING_LOOSE_TILE, .style = SETTING_STYLE_TOGGLE,
+				.linked = &fixes_saved.fix_drop_2_rooms_climbing_loose_tile, .required = &use_fixes_and_enhancements,
+				.text = "Fix dropping 2 rooms with loose tile",
+				.explanation = "Prince can fall 2 rooms down while climbing a loose tile in a room above. (Trick 153)"},
+		{.id = SETTING_FIX_FALLING_THROUGH_FLOOR_DURING_SWORD_STRIKE, .style = SETTING_STYLE_TOGGLE,
+				.linked = &fixes_saved.fix_falling_through_floor_during_sword_strike, .required = &use_fixes_and_enhancements,
+				.text = "Fix dropping through floor striking",
+				.explanation = "Prince or guard can fall through the floor during a sword strike sequence."},
 };
 
 NAMES_LIST(tile_type_setting_names, {
@@ -793,6 +829,24 @@ setting_type mods_settings[] = {
 				.linked = &custom_saved.show_mirror_image, .number_type = SETTING_BYTE,
 				.text = "Show mirror image",
 				.explanation = "Show the kid's mirror image in the mirror.\n(default = true)"},
+
+		{.id = SETTING_SHADOW_STEAL_LEVEL, .style = SETTING_STYLE_NUMBER, .required = &use_custom_options,
+				.linked = &custom_saved.shadow_steal_level, .number_type = SETTING_BYTE, .max = 16, .names_list = &never_is_16_list,
+				.text = "Shadow steal level",
+				.explanation = "Level where the shadow steals a potion.\n(default = 5)"},
+		{.id = SETTING_SHADOW_STEAL_ROOM, .style = SETTING_STYLE_NUMBER, .required = &use_custom_options,
+				.linked = &custom_saved.shadow_steal_room, .number_type = SETTING_BYTE, .min = 1, .max = 24,
+				.text = "Shadow steal room",
+				.explanation = "Room where the shadow steals a potion.\n(default = 24)"},
+		{.id = SETTING_SHADOW_STEP_LEVEL, .style = SETTING_STYLE_NUMBER, .required = &use_custom_options,
+				.linked = &custom_saved.shadow_step_level, .number_type = SETTING_BYTE, .max = 16, .names_list = &never_is_16_list,
+				.text = "Shadow step level",
+				.explanation = "Level where the shadow steps on a button.\n(default = 6)"},
+		{.id = SETTING_SHADOW_STEP_ROOM, .style = SETTING_STYLE_NUMBER, .required = &use_custom_options,
+				.linked = &custom_saved.shadow_step_room, .number_type = SETTING_BYTE, .min = 1, .max = 24,
+				.text = "Shadow step room",
+				.explanation = "Room where the shadow steps on a button.\n(default = 1)"},
+
 		{.id = SETTING_FALLING_EXIT_LEVEL, .style = SETTING_STYLE_NUMBER, .required = &use_custom_options,
 				.linked = &custom_saved.falling_exit_level, .number_type = SETTING_WORD, .max = 16, .names_list = &never_is_16_list,
 				.text = "Falling exit level",
@@ -1522,7 +1576,7 @@ void draw_setting(setting_type* setting, rect_type* parent, int* y_offset, int i
 					increase_setting(setting, value);
 				} else {
 					char* value_text = print_setting_value(setting, value);
-					int value_text_width = get_line_width(value_text, strlen(value_text));
+					int value_text_width = get_line_width(value_text, (int)strlen(value_text));
 					rect_type left_hitbox = right_hitbox;
 					left_hitbox.left -= (value_text_width + 10);
 					left_hitbox.right -= (value_text_width + 5);
@@ -1543,7 +1597,7 @@ void draw_setting(setting_type* setting, rect_type* parent, int* y_offset, int i
 		show_text_with_color(&text_rect, 1, -1, value_text, selected_color);
 
 		if (highlighted_setting_id == setting->id) {
-			int value_text_width = get_line_width(value_text, strlen(value_text));
+			int value_text_width = get_line_width(value_text, (int)strlen(value_text));
 			draw_image_with_blending(arrowhead_right_image, text_rect.right + 2, text_rect.top);
 			draw_image_with_blending(arrowhead_left_image, text_rect.right - value_text_width - 6, text_rect.top);
 		}
@@ -2110,6 +2164,7 @@ void process_ingame_settings_user_managed(SDL_RWops* rw, rw_process_func_type pr
 	process(joystick_only_horizontal);
 	process(enable_replay);
 	process(start_fullscreen);
+	process(use_hardware_acceleration);
 	process(use_correct_aspect_ratio);
 	process(use_integer_scaling);
 	process(scaling_type);

@@ -1,6 +1,6 @@
 /*
 SDLPoP, a port/conversion of the DOS game Prince of Persia.
-Copyright (C) 2013-2021  Dávid Nagy
+Copyright (C) 2013-2022  Dávid Nagy
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -27,13 +27,13 @@ The authors of this program may be contacted at https://forum.princed.org
 #define DW(data_word) (data_word) & 0x00FF, (((data_word) & 0xFF00) >> 8)
 
 // Shorter notation for the sequence table instructions
-#define act(action) SEQ_ACTION, action
+#define act(action) SEQ_ACTION, (action)
 #define jmp(dest) SEQ_JMP, DW(dest)
 #define jmp_if_feather(dest) SEQ_JMP_IF_FEATHER, DW(dest)
-#define dx(amount) SEQ_DX, (byte) amount
-#define dy(amount) SEQ_DY, (byte) amount
-#define snd(sound) SEQ_SOUND, sound
-#define set_fall(x, y) SEQ_SET_FALL, (byte) x, (byte) y
+#define dx(amount) SEQ_DX, (byte) (amount)
+#define dy(amount) SEQ_DY, (byte) (amount)
+#define snd(sound) SEQ_SOUND, (sound)
+#define set_fall(x, y) SEQ_SET_FALL, (byte) (x), (byte) (y)
 
 // This splits the byte array into labeled "sections" that are packed tightly next to each other
 // However, it only seems to work correctly in the Debug configuration...
@@ -198,35 +198,35 @@ The authors of this program may be contacted at https://forum.princed.org
 #define Mclimb_loop         2  + Mclimb             //SEQTBL_BASE + 2306  // 0x2270
 
 const word seqtbl_offsets[] = {
-        0x0000,         startrun,       stand,          standjump,
-        runjump,        turn,           runturn,        stepfall,
-        jumphangMed,    hang,           climbup,        hangdrop,
-        freefall,       runstop,        jumpup,         fallhang,
-        jumpbackhang,   softland,       jumpfall,       stepfall2,
-        medland,        rjumpfall,      hardland,       hangfall,
-        jumphangLong,   hangstraight,   rdiveroll,      sdiveroll,
-        highjump,       step1,          step2,          step3,
-        step4,          step5,          step6,          step7,
-        step8,          step9,          step10,         step11,
-        step12,         step13,         step14,         turnrun,
-        testfoot,       bumpfall,       hardbump,       bump,
-        superhijump,    standup,        stoop,          impale,
-        crush,          deadfall,       halve,          engarde,
-        advance,        retreat,        strike,         flee,
-        turnengarde,    striketoblock,  readyblock,     landengarde,
-        bumpengfwd,     bumpengback,    blocktostrike,  strikeadv,
-        climbdown,      blockedstrike,  climbstairs,    dropdead,
-        stepback,       climbfail,      stabbed,        faststrike,
-        strikeret,      alertstand,     drinkpotion,    crawl,
-        alertturn,      fightfall,      efightfall,     efightfallfwd,
-        running,        stabkill,       fastadvance,    goalertstand,
-        arise,          turndraw,       guardengarde,   pickupsword,
-        resheathe,      fastsheathe,    Pstand,         Vstand,
-        Vwalk,          Vstop,          Palert,         Pstepback,
-        Vexit,          Mclimb,         Vraise,         Plie,
-        patchfall,      Mscurry,        Mstop,          Mleave,
-        Pembrace,       Pwaiting,       Pstroke,        Prise,
-        Pcrouch,        Pslump,         Mraise
+	0x0000,         startrun,       stand,          standjump,
+	runjump,        turn,           runturn,        stepfall,
+	jumphangMed,    hang,           climbup,        hangdrop,
+	freefall,       runstop,        jumpup,         fallhang,
+	jumpbackhang,   softland,       jumpfall,       stepfall2,
+	medland,        rjumpfall,      hardland,       hangfall,
+	jumphangLong,   hangstraight,   rdiveroll,      sdiveroll,
+	highjump,       step1,          step2,          step3,
+	step4,          step5,          step6,          step7,
+	step8,          step9,          step10,         step11,
+	step12,         step13,         step14,         turnrun,
+	testfoot,       bumpfall,       hardbump,       bump,
+	superhijump,    standup,        stoop,          impale,
+	crush,          deadfall,       halve,          engarde,
+	advance,        retreat,        strike,         flee,
+	turnengarde,    striketoblock,  readyblock,     landengarde,
+	bumpengfwd,     bumpengback,    blocktostrike,  strikeadv,
+	climbdown,      blockedstrike,  climbstairs,    dropdead,
+	stepback,       climbfail,      stabbed,        faststrike,
+	strikeret,      alertstand,     drinkpotion,    crawl,
+	alertturn,      fightfall,      efightfall,     efightfallfwd,
+	running,        stabkill,       fastadvance,    goalertstand,
+	arise,          turndraw,       guardengarde,   pickupsword,
+	resheathe,      fastsheathe,    Pstand,         Vstand,
+	Vwalk,          Vstop,          Palert,         Pstepback,
+	Vexit,          Mclimb,         Vraise,         Plie,
+	patchfall,      Mscurry,        Mstop,          Mleave,
+	Pembrace,       Pwaiting,       Pstroke,        Prise,
+	Pcrouch,        Pslump,         Mraise
 };
 
 // data:196E
@@ -781,7 +781,7 @@ byte seqtbl[] = {
 	dx(3), frame_124_stepping_4,
 	dx(4), frame_125_stepping_5,
 	dx(3), frame_126_stepping_6,
-	dx(-)2, frame_128_stepping_8,
+	dx(-2), frame_128_stepping_8,
 	frame_129_stepping_9, frame_130_stepping_10, frame_131_stepping_11, frame_132_stepping_12,
 	jmp(stand), // goto "stand"
 

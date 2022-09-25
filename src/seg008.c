@@ -1,6 +1,6 @@
 /*
 SDLPoP, a port/conversion of the DOS game Prince of Persia.
-Copyright (C) 2013-2021  Dávid Nagy
+Copyright (C) 2013-2022  Dávid Nagy
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -747,7 +747,7 @@ void __pascal far draw_tile_fore() {
 			if (fixes->enable_super_high_jump) {
 				add_foretable(id_chtab_6_environment, tile_table[curr_tile].base_id, draw_xh, 0, tile_table[curr_tile].base_y + draw_main_y, blitters_10h_transp, 0);
 			}
-			// do not break
+			// fallthrough!
 		default:
 			if (fixes->enable_super_high_jump && tile_left == tiles_26_lattice_down && curr_tile == tiles_12_doortop) {
 				add_foretable(id_chtab_6_environment, 6, draw_xh, 0, tile_table[curr_tile].base_y + draw_main_y + 3, blitters_10h_transp, 0);
@@ -1503,12 +1503,12 @@ void __pascal far draw_leveldoor() {
 		}
 	}
 	leveldoor_ybottom = ybottom - (modifier_left & 3) - 48;
-	for (var_6 = ybottom - modifier_left;
-		add_backtable(id_chtab_6_environment, 33 /*level door bottom*/, draw_xh + 1, 0, leveldoor_ybottom, blitters_0_no_transp, 0),
-			var_6 > leveldoor_ybottom;
-		leveldoor_ybottom += 4) {
-		;
-	} // runs at least once?
+	var_6 = ybottom - modifier_left;
+	do { // runs at least once
+		add_backtable(id_chtab_6_environment, 33 /*level door bottom*/, draw_xh + 1, 0, leveldoor_ybottom, blitters_0_no_transp, 0);
+		if (var_6 > leveldoor_ybottom) leveldoor_ybottom += 4;
+		else break;
+	} while (true);
 	add_backtable(id_chtab_6_environment, 34 /*level door top*/, draw_xh + 1, 0, draw_main_y - 64, blitters_0_no_transp, 0);
 }
 
@@ -2056,7 +2056,7 @@ void __pascal far erase_bottom_text(int arg_0) {
 void __pascal far wall_pattern(int which_part,int which_table) {
 	// local variables
 	add_table_type saved_sim;
-	word v2; word v3; byte v4; byte v5;
+	word bottom_divider; word middle_divider; byte bottom_divider_offset; byte middle_divider_offset;
 	byte bg_modifier;
 	dword saved_prng_state;
 	word is_dungeon;
@@ -2091,70 +2091,73 @@ void __pascal far wall_pattern(int which_part,int which_table) {
 		add_wipetable(which_table, 8*draw_xh    , draw_bottom_y   ,  3, 4*8, palace_wall_colors[44 * drawn_row + 33 + drawn_col]);
 		ptr_add_table(id_chtab_7_environmentwall, prandom(2) + 15, draw_xh    , 0, draw_bottom_y   , blitters_46h_mono_6, 0);
 	} else {
-		v3 = prandom(1);
-		v5 = prandom(4);
-		v2 = prandom(1);
-		v4 = prandom(4);
+		middle_divider = prandom(1); // 0 = thick middle brick divider, 1 = thin middle brick divider
+		middle_divider_offset = prandom(4); // Horizontal render offset for middle brick divider
+		
+		// Same as above but for bottom brick dividers
+		bottom_divider = prandom(1);
+		bottom_divider_offset = prandom(4);
+
 		// store the background modifier for the current tile in a local variable
 		// apparently, for walls, the modifier stores whether there are adjacent walls
 		bg_modifier = curr_modifier & 0x7F;
 		switch (bg_modifier) {
-			case WALL_MODIFIER_WWW:
+			case WALL_MODIFIER_WWW: // left and right tiles are walls
 				if (which_part != 0) {
 					if (prandom(4) == 0) {
 						ptr_add_table(RSET_WALL, RES_WALL_RNDBLOCK, draw_xh, 0, draw_bottom_y - 42, BLIT_NO_TRANS, 0);
 					}
-					ptr_add_table(RSET_WALL, RES_WALL_DIVIDER1 + v3, draw_xh + 1, v5, draw_bottom_y - 21, BLIT_TRANS, 0);
+					ptr_add_table(RSET_WALL, RES_WALL_DIVIDER1 + middle_divider, draw_xh + 1, middle_divider_offset, draw_bottom_y - 21, BLIT_TRANS, 0);
 				}
-				ptr_add_table(RSET_WALL, RES_WALL_DIVIDER1 + v2, draw_xh, v4, draw_bottom_y, BLIT_TRANS, 0);
+				ptr_add_table(RSET_WALL, RES_WALL_DIVIDER1 + bottom_divider, draw_xh, bottom_divider_offset, draw_bottom_y, BLIT_TRANS, 0);
 				if (which_part != 0) {
 					if (is_dungeon) {
 						if (prandom(4) == 0) {
-							draw_right_mark(prandom(3), v5);
+							draw_right_mark(prandom(3), middle_divider_offset);
 						}
 						if (prandom(4) == 0) {
-							draw_left_mark(prandom(4), v5 - v3, v4 - v2);
+							draw_left_mark(prandom(4), middle_divider_offset - middle_divider, bottom_divider_offset - bottom_divider);
 						}
 					}
 				}
 				break;
-			case WALL_MODIFIER_SWS:
+			case WALL_MODIFIER_SWS: // left and right tiles are not walls
 				if (is_dungeon) {
 					if (which_part != 0) {
 						if (prandom(6) == 0) {
-							draw_left_mark(prandom(1), v5 - v3, v4 - v2);
+							draw_left_mark(prandom(1), middle_divider_offset - middle_divider, bottom_divider_offset - bottom_divider);
 						}
 					}
 				}
 				break;
-			case WALL_MODIFIER_SWW:
+			case WALL_MODIFIER_SWW: // right tile is a wall, but not left
 				if (which_part != 0) {
 					if (prandom(4) == 0) {
 						ptr_add_table(RSET_WALL, RES_WALL_RNDBLOCK, draw_xh, 0, draw_bottom_y - 42, BLIT_NO_TRANS, 0);
 					}
-					ptr_add_table(RSET_WALL, RES_WALL_DIVIDER1 + v3, draw_xh + 1 /*fix*/ , v5, draw_bottom_y - 21, BLIT_TRANS, 0);
+					ptr_add_table(RSET_WALL, RES_WALL_DIVIDER1 + middle_divider, draw_xh + 1 /*fix*/ , middle_divider_offset, draw_bottom_y - 21, BLIT_TRANS, 0);
 					if (is_dungeon) {
 						if (prandom(4) == 0) {
-							draw_right_mark(prandom(3), v5);
+							draw_right_mark(prandom(3), middle_divider_offset);
 						}
 						if (prandom(4) == 0) {
-							draw_left_mark(prandom(3), v5 - v3, v4 - v2);
+							draw_left_mark(prandom(3), middle_divider_offset - middle_divider, bottom_divider_offset - bottom_divider);
 						}
 					}
 				}
 				break;
-			case WALL_MODIFIER_WWS:
+			case WALL_MODIFIER_WWS: // left tile is a wall, but not right
 				if (which_part != 0) {
-					ptr_add_table(RSET_WALL, RES_WALL_DIVIDER1 + v3, draw_xh + 1, v5, draw_bottom_y - 21, BLIT_TRANS, 0);
+					ptr_add_table(RSET_WALL, RES_WALL_DIVIDER1 + middle_divider, draw_xh + 1, middle_divider_offset, draw_bottom_y - 21, BLIT_TRANS, 0);
 				}
-				ptr_add_table(RSET_WALL, RES_WALL_DIVIDER1 + v2, draw_xh, v4, draw_bottom_y, BLIT_TRANS, 0);
+				ptr_add_table(RSET_WALL, RES_WALL_DIVIDER1 + bottom_divider, draw_xh, bottom_divider_offset, draw_bottom_y, BLIT_TRANS, 0);
 				if (which_part != 0) {
 					if (is_dungeon) {
 						if (prandom(4) == 0) {
-							draw_right_mark(prandom(1) + 2, v5);
+							draw_right_mark(prandom(1) + 2, middle_divider_offset);
 						}
 						if (prandom(4) == 0) {
-							draw_left_mark(prandom(4), v5 - v3, v4 - v2);
+							draw_left_mark(prandom(4), middle_divider_offset - middle_divider, bottom_divider_offset - bottom_divider);
 						}
 					}
 				}
@@ -2165,33 +2168,33 @@ void __pascal far wall_pattern(int which_part,int which_table) {
 	ptr_add_table = saved_sim;
 }
 
-void __pascal far draw_left_mark (word arg3, word arg2, word arg1) {
-	word lv1; word lv2;
-	static const word LPOS[] = {58, 41, 37, 20, 16};
-	lv1 = RES_WALL_MARK_TL;
+void __pascal far draw_left_mark (word decal_variant, word arg2, word arg1) {
+	word image_id; word lv2;
+	static const word LPOS[] = {58, 41, 37, 20, 16}; // Vertical render offset for all brick decal variants (last entry seems to be unused)
+	image_id = RES_WALL_MARK_TL;
 	lv2 = 0;
-	if (arg3 % 2) {
-		lv1 = RES_WALL_MARK_BL;
+	if (decal_variant % 2) { // Variants alternate between bottomleft and topleft decals
+		image_id = RES_WALL_MARK_BL;
 	}
-	if (arg3 > 3) {
+	if (decal_variant > 3) {
 		lv2 = arg1 + 6;
-	} else if (arg3 > 1) {
+	} else if (decal_variant > 1) {
 		lv2 = arg2 + 6;
 	}
-	ptr_add_table(RSET_WALL, lv1, draw_xh + (arg3 == 2 || arg3 == 3), lv2, draw_bottom_y - LPOS[arg3], BLIT_TRANS, 0);
+	ptr_add_table(RSET_WALL, image_id, draw_xh + (arg3 == 2 || arg3 == 3), lv2, draw_bottom_y - LPOS[decal_variant], BLIT_TRANS, 0);
 }
 
-void __pascal far draw_right_mark (word arg2, word arg1) {
-	word rv;
-	static const word RPOS[] = {52, 42, 31, 21};
-	rv = RES_WALL_MARK_TR;
-	if (arg2 % 2) {
-		rv = RES_WALL_MARK_BR;
+void __pascal far draw_right_mark (word decal_variant, word arg1) {
+	word image_id;
+	static const word RPOS[] = {52, 42, 31, 21}; // Vertical render offset for all brick decal variants (last entry seems to be unused)
+	image_id = RES_WALL_MARK_TR;
+	if (decal_variant % 2) { // Variants alternate between bottomright and topright decals
+		image_id = RES_WALL_MARK_BR;
 	}
-	if (arg2 < 2) {
+	if (decal_variant < 2) {
 		arg1 = 24;
 	} else {
 		arg1 -= 3;
 	}
-	ptr_add_table(RSET_WALL, rv, draw_xh + (arg2 > 1), arg1, draw_bottom_y - RPOS[arg2], BLIT_TRANS, 0);
+	ptr_add_table(RSET_WALL, image_id, draw_xh + (decalVariant > 1), arg1, draw_bottom_y - RPOS[decal_variant], BLIT_TRANS, 0);
 }

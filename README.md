@@ -44,6 +44,23 @@ Contributors:
 * zaps166 (small Makefile fixes)
 * usineur (faster music loading)
 * yaqxsw (icon)
+* SergioMartin86
+* dstarosta
+* Ryzee119
+* berikv
+* xyproto
+* BarrOff
+* icculus
+* thrimbor
+* vanfanel
+* asppsa
+* akien-mga
+* mbeijen
+* alebcay
+* ckorn
+* Rondom
+* yuv422
+* dive
 
 Usernames on the list above refer to either GitHub users or users from `forum.princed.org`.
 
@@ -76,6 +93,9 @@ Sources which helped in making the disassembly:
 ## LICENSE
 
 This program is open source under the GNU General Public License terms, see `COPYING` and `src/GPLv3.h`.
+
+The following files are external libraries with their own licenses: `src/opl3.c`, `src/opl3.h`, `src/stb_vorbis.c`.
+See their contents for license information.
 
 ## USAGE
 
@@ -313,7 +333,9 @@ Furthermore, SDLPoP opens up new possibilities for mod making. For example:
 * Alternate link: https://www.popot.org/custom_levels.php?mod=0000153
 
 Since version 1.16, there is support for fake tiles, for example walls that the prince can go through.
-The Apoplexy level editor supports these additional tiles since v3.0: https://www.apoplexy.org/ (Just don't overuse them, please!)
+The [Apoplexy level editor](https://www.popot.org/level_editors.php?editor=apoplexy) supports these additional tiles since v3.0. (Just don't overuse them, please!)
+
+See [doc/tiles.md](doc/tiles.md) for documentation on fake tiles.
 
 ## REPLAYS
 
@@ -357,8 +379,7 @@ While recording, make a quicksave to mark your place, and press quickload to ret
 
 #### Dev-C++
 
-* I originally used Dev-C++ version 4.9.9.2 from here: https://sourceforge.net/projects/dev-cpp/files/Binaries/
-* More recently, I'm using this version: https://sourceforge.net/projects/orwelldevcpp/
+* Use this version of Dev-C++: https://sourceforge.net/projects/orwelldevcpp/
 
 You need the MinGW Development Libraries of SDL2:
 

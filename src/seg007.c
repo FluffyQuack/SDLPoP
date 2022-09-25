@@ -1,6 +1,6 @@
 /*
 SDLPoP, a port/conversion of the DOS game Prince of Persia.
-Copyright (C) 2013-2021  Dávid Nagy
+Copyright (C) 2013-2022  Dávid Nagy
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -849,16 +849,32 @@ void __pascal far animate_loose() {
 			// something is on the floor
 			// should it fall already?
 			if (curr_modifier >= /*11*/ custom->loose_floor_delay) {
-				curr_modifier = remove_loose(room = trob.room, tilepos = trob.tilepos);
-				trob.type = -1;
-				curmob.xh = (tilepos % 10) << 2;
-				row = tilepos / 10;
-				curmob.y = y_loose_land[row + 1];
-				curmob.room = room;
-				curmob.speed = 0;
-				curmob.type = 0;
-				curmob.row = row;
-				add_mob();
+                room = trob.room;
+                tilepos = trob.tilepos;
+#ifdef FIX_DROP_2_ROOMS_CLIMBING_LOOSE_TILE
+                if (fixes->fix_drop_2_rooms_climbing_loose_tile &&
+                        room == level.roomlinks[Kid.room - 1].up && // the tile is in the room above
+                        tilepos / 10 == 2 && // at row 2
+                        Kid.curr_row == 0 && // prince is at a row 0 of the room below
+                        Kid.curr_col == tilepos % 10 && // and at the same column
+                        Kid.frame >= frame_135_climbing_1 && // and is climbing
+                        Kid.frame < frame_141_climbing_7) { // prince's row gets changed in the sequence before the frame 141
+                    loose_shake(0);
+                } else {
+#endif
+                    curr_modifier = remove_loose(room, tilepos);
+                    trob.type = -1;
+                    curmob.xh = (tilepos % 10) << 2;
+                    row = tilepos / 10;
+                    curmob.y = y_loose_land[row + 1];
+                    curmob.room = room;
+                    curmob.speed = 0;
+                    curmob.type = 0;
+                    curmob.row = row;
+                    add_mob();
+#ifdef FIX_DROP_2_ROOMS_CLIMBING_LOOSE_TILE
+                }
+#endif
 			} else {
 				loose_shake(0);
 			}

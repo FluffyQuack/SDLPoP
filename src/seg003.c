@@ -1,6 +1,6 @@
 /*
 SDLPoP, a port/conversion of the DOS game Prince of Persia.
-Copyright (C) 2013-2021  Dávid Nagy
+Copyright (C) 2013-2022  Dávid Nagy
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -154,9 +154,9 @@ void __pascal far do_startpos() {
 	SetCameraOffsetsForNewRoom(1);
 
 	x = level.start_pos;
-	Char.curr_col = x % 10;
-	Char.curr_row = x / 10;
-	Char.x = x_bump[Char.curr_col + 5] + 14;
+	Char.curr_col = x % SCREEN_TILECOUNTX;
+	Char.curr_row = x / SCREEN_TILECOUNTX;
+	Char.x = x_bump[Char.curr_col + FIRST_ONSCREEN_COLUMN] + TILE_SIZEX;
 	// Start in the opposite direction (and turn into the correct one).
 	Char.direction = ~ level.start_dir;
 	if (seamless == 0) {
@@ -631,10 +631,10 @@ void __pascal far jump_through_mirror() {
 void __pascal far check_mirror_image() {
 	short distance;
 	short xpos;
-	xpos = x_bump[Char.curr_col + 5] + 10;
+	xpos = x_bump[Char.curr_col + FIRST_ONSCREEN_COLUMN] + 10; // I think 10 is the offset for mirror collision within a tile
 	distance = distance_to_edge_weight();
 	if (Char.direction >= dir_0_right) {
-		distance = (~distance) + 14;
+		distance = (~distance) + TILE_SIZEX;
 	}
 	distance_mirror = distance - 2;
 	Char.x = (xpos << 1) - Char.x;
@@ -664,6 +664,15 @@ void __pascal far bump_into_opponent() {
 			}
 			#endif
 
+			#ifdef FIX_JUMPING_OVER_GUARD
+			if (fixes->fix_jumping_over_guard) {
+				if ((Char.direction == dir_0_right && Char.x > Opp.x) ||
+				        (Char.direction == dir_FF_left && Char.x < Opp.x)) {
+					Char.x = Opp.x;
+				}
+			}
+			#endif
+
 			Char.y = y_land[Char.curr_row + 1];
 			Char.fall_y = 0;
 			seqtbl_offset_char(seq_47_bump); // bump into opponent
@@ -676,10 +685,10 @@ void __pascal far bump_into_opponent() {
 void __pascal far pos_guards() {
 	short guard_tile;
 	short room1;
-	for (room1 = 0; room1 < 24; ++room1) {
+	for (room1 = 0; room1 < ROOMCOUNT; ++room1) {
 		guard_tile = level.guards_tile[room1];
 		if (guard_tile < 30) {
-			level.guards_x[room1] = x_bump[guard_tile % 10 + 5] + 14;
+			level.guards_x[room1] = x_bump[(guard_tile % 10) + FIRST_ONSCREEN_COLUMN] + TILE_SIZEX;
 			level.guards_seq_hi[room1] = 0;
 		}
 	}
@@ -710,16 +719,16 @@ Possible results in can_guard_see_kid:
 		Guard.direction != dir_56_none && Kid.alive < 0 && Guard.alive < 0 && Kid.room == Guard.room && Kid.curr_row == Guard.curr_row
 	) {
 		can_guard_see_kid = 2;
-		left_pos = x_bump[Kid.curr_col + 5] + 7;
+		left_pos = x_bump[Kid.curr_col + FIRST_ONSCREEN_COLUMN] + TILE_MIDX;
 #ifdef FIX_DOORTOP_DISABLING_GUARD
 		if (fixes->fix_doortop_disabling_guard) {
 			// When the kid is hanging on the right side of a doortop, Kid.curr_col points at the doortop tile and a guard on the left side will see the prince.
 			// This fixes that.
-			if (Kid.action == actions_2_hang_climb || Kid.action == actions_6_hang_straight) left_pos += 14;
+			if (Kid.action == actions_2_hang_climb || Kid.action == actions_6_hang_straight) left_pos += TILE_SIZEX;
 		}
 #endif
 		//printf("Kid.curr_col = %d, Kid.action = %d\n", Kid.curr_col, Kid.action);
-		right_pos = x_bump[Guard.curr_col + 5] + 7;
+		right_pos = x_bump[Guard.curr_col + FIRST_ONSCREEN_COLUMN] + TILE_MIDX;
 		if (left_pos > right_pos) {
 			temp = left_pos;
 			left_pos = right_pos;
@@ -727,7 +736,7 @@ Possible results in can_guard_see_kid:
 		}
 		// A chomper is on the left side of a tile, so it doesn't count.
 		if (get_tile_at_kid(left_pos) == tiles_18_chomper) {
-			left_pos += 14;
+			left_pos += TILE_SIZEX;
 		}
 		// A gate is on the right side of a tile, so it doesn't count.
 		if (get_tile_at_kid(right_pos) == tiles_4_gate
@@ -735,7 +744,7 @@ Possible results in can_guard_see_kid:
 			|| (fixes->fix_doortop_disabling_guard && (get_tile_at_kid(right_pos) == tiles_7_doortop_with_floor || get_tile_at_kid(right_pos) == tiles_12_doortop))
 #endif
 		) {
-			right_pos -= 14;
+			right_pos -= TILE_SIZEX;
 		}
 		if (right_pos >= left_pos) {
 			while (left_pos <= right_pos) {
@@ -754,7 +763,7 @@ Possible results in can_guard_see_kid:
 				) {
 					can_guard_see_kid = 1;
 				}
-				left_pos += 14;
+				left_pos += TILE_SIZEX;
 			}
 		}
 	} else {

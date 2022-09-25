@@ -1,6 +1,6 @@
 /*
 SDLPoP, a port/conversion of the DOS game Prince of Persia.
-Copyright (C) 2013-2021  Dávid Nagy
+Copyright (C) 2013-2022  Dávid Nagy
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ int screenshot_index = 0;
 // Use incrementing numbers and a separate folder, like DOSBox.
 void make_screenshot_filename(void) {
 	// Create the screenshots directory in SDLPoP's directory, even if the current directory is something else.
-	strncpy(screenshots_folder, locate_file("screenshots"), sizeof(screenshots_folder));
+	snprintf_check(screenshots_folder, sizeof(screenshots_folder), "%s", locate_file("screenshots"));
 	// Create the folder if it doesn't exist yet:
 #if defined WIN32 || _WIN32 || WIN64 || _WIN64
 	mkdir (screenshots_folder);
@@ -38,7 +38,7 @@ void make_screenshot_filename(void) {
 #endif
 	// Find the first unused filename:
 	for (;;) {
-		snprintf(screenshot_filename, sizeof(screenshot_filename), "%s/screenshot_%03d.png", screenshots_folder, screenshot_index);
+		snprintf_check(screenshot_filename, sizeof(screenshot_filename), "%s/screenshot_%03d.png", screenshots_folder, screenshot_index);
 		if (! file_exists(screenshot_filename)) {
 			return;
 		}
@@ -277,7 +277,7 @@ void draw_extras(void) {
 			drawn_room == /*7*/ custom->checkpoint_clear_tile_room &&
 			tilepos == /*4*/ custom->checkpoint_clear_tile_col * 10 + custom->checkpoint_clear_tile_row
 		) {
-			special_event = "removed"; // loose floor is removed
+			special_event = "removed"; // this loose floor is removed when restarting at the checkpoint
 		}
 
 		if (current_level == 3 && drawn_room == 2 && tile_type == tiles_4_gate) {
@@ -300,7 +300,10 @@ void draw_extras(void) {
 			special_event = "skel wake"; // skeleton wakes
 		}
 
-		if (current_level == 3 && drawn_room == 3 && tilepos == 14) {
+		if (current_level == /*3*/ custom->skeleton_level &&
+			drawn_room == /*3*/ custom->skeleton_reappear_room &&
+			tilepos == /*14*/ custom->skeleton_reappear_row * 10 + (custom->skeleton_reappear_x - 58) / 14
+		) {
 			special_event = "skel cont"; // skeleton continues here if it falls into this room
 		}
 
@@ -315,7 +318,11 @@ void draw_extras(void) {
 
 		// not marked: level 5 shadow, required opening gate
 
-		if (current_level == 5 && drawn_room == 24 && tilepos == 3 && tile_type == tiles_10_potion) {
+		if (current_level == /*5*/ custom->shadow_steal_level &&
+			drawn_room == /*24*/ custom->shadow_steal_room &&
+			tilepos == 3 &&
+			tile_type == tiles_10_potion
+		) {
 			special_event = "stolen"; // stolen potion
 		}
 

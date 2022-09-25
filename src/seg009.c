@@ -1,6 +1,6 @@
 /*
 SDLPoP, a port/conversion of the DOS game Prince of Persia.
-Copyright (C) 2013-2021  Dávid Nagy
+Copyright (C) 2013-2022  Dávid Nagy
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -59,7 +59,7 @@ void find_exe_dir(void) {
 }
 
 bool file_exists(const char* filename) {
-    return (access(filename, F_OK) != -1);
+	return (access(filename, F_OK) != -1);
 }
 
 const char* locate_file_(const char* filename, char* path_buffer, int buffer_size) {
@@ -69,8 +69,8 @@ const char* locate_file_(const char* filename, char* path_buffer, int buffer_siz
 		// If failed, it may be that SDLPoP is being run from the wrong different working directory.
 		// We can try to rescue the situation by loading from the directory of the executable.
 		find_exe_dir();
-        snprintf_check(path_buffer, buffer_size, "%s/%s", exe_dir, filename);
-        return (const char*) path_buffer;
+		snprintf_check(path_buffer, buffer_size, "%s/%s", exe_dir, filename);
+		return (const char*) path_buffer;
 	}
 }
 
@@ -247,7 +247,7 @@ void __pascal far clear_kbd_buf() {
 word __pascal far prandom(word max) {
 	if (!seed_was_init) {
 		// init from current time
-		random_seed = time(NULL);
+		random_seed = (dword)time(NULL);
 		seed_was_init = 1;
 	}
 	random_seed = random_seed * 214013 + 2531011;
@@ -347,10 +347,10 @@ static FILE* open_dat_from_root_or_data_dir(const char* filename) {
 		char data_path[POP_MAX_PATH];
 		snprintf_check(data_path, sizeof(data_path), "data/%s", filename);
 
-        if (!file_exists(data_path)) {
-            find_exe_dir();
-            snprintf_check(data_path, sizeof(data_path), "%s/data/%s", exe_dir, filename);
-        }
+		if (!file_exists(data_path)) {
+			find_exe_dir();
+			snprintf_check(data_path, sizeof(data_path), "%s/data/%s", exe_dir, filename);
+		}
 
 		// verify that this is a regular file and not a directory (otherwise, don't open)
 		struct stat path_stat;
@@ -1395,7 +1395,7 @@ const rect_type far *__pascal draw_text(const rect_type far *rect_ptr,int x_alig
 void __pascal far show_text(const rect_type far *rect_ptr,int x_align,int y_align,const char far *text) {
 	// stub
 	//printf("show_text: %s\n",text);
-	draw_text(rect_ptr, x_align, y_align, text, strlen(text));
+	draw_text(rect_ptr, x_align, y_align, text, (int)strlen(text));
 }
 
 // seg009:04FF
@@ -1578,6 +1578,13 @@ void __pascal far draw_text_cursor(int xpos,int ypos,int color) {
 
 // seg009:053C
 int __pascal far input_str(const rect_type far *rect,char *buffer,int max_length,const char *initial,int has_initial,int arg_4,int color,int bgcolor) {
+	// Display the screen keyboard if supported.
+	//SDL_SetHint(SDL_HINT_IME_SHOW_UI, "1");
+	SDL_Rect sdlrect;
+	rect_to_sdlrect(rect, &sdlrect);
+	SDL_SetTextInputRect(&sdlrect);
+	SDL_StartTextInput();
+
 	short length;
 	word key;
 	short cursor_visible;
@@ -1616,6 +1623,7 @@ int __pascal far input_str(const rect_type far *rect,char *buffer,int max_length
 				}
 				if (key == SDL_SCANCODE_RETURN) { // Enter
 					buffer[length] = 0;
+					SDL_StopTextInput();
 					return length;
 				} else break;
 			}
@@ -1628,6 +1636,7 @@ int __pascal far input_str(const rect_type far *rect,char *buffer,int max_length
 		if (key == SDL_SCANCODE_ESCAPE) { // Esc
 			draw_rect(rect, bgcolor);
 			buffer[0] = 0;
+			SDL_StopTextInput();
 			return -1;
 		}
 		if (length != 0 && (key == SDL_SCANCODE_BACKSPACE ||
@@ -1866,12 +1875,12 @@ void stop_digi(void) {
 stb_vorbis* ogg_decoder;
 
 void stop_ogg(void) {
-    SDL_PauseAudio(1);
-    if (!ogg_playing) return;
-    ogg_playing = 0;
-    SDL_LockAudio();
-    ogg_decoder = NULL;
-    SDL_UnlockAudio();
+	SDL_PauseAudio(1);
+	if (!ogg_playing) return;
+	ogg_playing = 0;
+	SDL_LockAudio();
+	ogg_decoder = NULL;
+	SDL_UnlockAudio();
 }
 
 // seg009:7214
@@ -1880,7 +1889,7 @@ void __pascal far stop_sounds() {
 	stop_digi();
 	stop_midi();
 	speaker_sound_stop();
-    stop_ogg();
+	stop_ogg();
 }
 
 short square_wave_state = 4000; // If the amplitude is too high, the speaker sounds will be really loud!
@@ -1997,12 +2006,12 @@ void digi_callback(void *userdata, Uint8 *stream, int len) {
 }
 
 void ogg_callback(void *userdata, Uint8 *stream, int len) {
-    int output_channels = digi_audiospec->channels;
-    int bytes_per_sample = sizeof(short) * output_channels;
-    int samples_requested = len / bytes_per_sample;
+	int output_channels = digi_audiospec->channels;
+	int bytes_per_sample = sizeof(short) * output_channels;
+	int samples_requested = len / bytes_per_sample;
 
 	int samples_filled;
-    if (is_sound_on) {
+	if (is_sound_on) {
 		samples_filled = stb_vorbis_get_samples_short_interleaved(ogg_decoder, output_channels,
                                                                       (short*) stream, len / sizeof(short));
 		if (samples_filled < samples_requested) {
@@ -2220,7 +2229,7 @@ sound_buffer_type* load_sound(int index) {
 				// Decoding the entire file immediately would make the loading time much longer.
 				// However, we can also create the decoder now, and only use it when we are actually playing the file.
 				// (In the audio callback, we'll decode chunks of samples to the output stream, as needed).
-				stb_vorbis* decoder = stb_vorbis_open_memory(file_contents, file_size, NULL, NULL);
+				stb_vorbis* decoder = stb_vorbis_open_memory(file_contents, (int)file_size, NULL, NULL);
 				if (decoder == NULL) {
 					free(file_contents);
 					break;
@@ -2260,7 +2269,7 @@ void play_ogg_sound(sound_buffer_type *buffer) {
 	stb_vorbis_seek_start(buffer->ogg.decoder);
 
 	SDL_LockAudio();
-    ogg_decoder = buffer->ogg.decoder;
+	ogg_decoder = buffer->ogg.decoder;
 	SDL_UnlockAudio();
 	SDL_PauseAudio(0);
 
@@ -2370,8 +2379,8 @@ void __pascal far play_digi_sound(sound_buffer_type far *buffer) {
 
 void free_sound(sound_buffer_type far *buffer) {
 	if (buffer == NULL) return;
-    if (buffer->type == sound_ogg) {
-        stb_vorbis_close(buffer->ogg.decoder);
+	if (buffer->type == sound_ogg) {
+		stb_vorbis_close(buffer->ogg.decoder);
 		free(buffer->ogg.file_contents);
 	}
 	free(buffer);
@@ -2541,10 +2550,14 @@ void __pascal far set_gr_mode(byte grmode) {
 #ifdef SDL_HINT_WINDOWS_DISABLE_THREAD_NAMING
 	SDL_SetHint(SDL_HINT_WINDOWS_DISABLE_THREAD_NAMING, "1");
 #endif
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_NOPARACHUTE |
-	             SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC ) != 0) {
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_NOPARACHUTE | SDL_INIT_GAMECONTROLLER) != 0) {
 		sdlperror("set_gr_mode: SDL_Init");
 		quit(1);
+	}
+	if (enable_controller_rumble) {
+		if (SDL_InitSubSystem(SDL_INIT_HAPTIC) != 0) {
+			printf("Warning: Haptic subsystem unavailable, ignoring enable_controller_rumble = true\n");
+		}
 	}
 
 	//SDL_EnableUNICODE(1); //deprecated
@@ -2583,12 +2596,15 @@ void __pascal far set_gr_mode(byte grmode) {
 	                           pop_window_width, pop_window_height, flags);
 	// Make absolutely sure that VSync will be off, to prevent timer issues.
 	SDL_SetHint(SDL_HINT_RENDER_VSYNC, "0");
-#ifdef USE_HW_ACCELERATION
-	const Uint32 RENDER_BACKEND = SDL_RENDERER_ACCELERATED;
-#else
-	const Uint32 RENDER_BACKEND = SDL_RENDERER_SOFTWARE;
-#endif
-	renderer_ = SDL_CreateRenderer(window_, -1 , RENDER_BACKEND | SDL_RENDERER_TARGETTEXTURE);
+	flags = 0;
+	switch (use_hardware_acceleration) {
+		case 0:  flags |= SDL_RENDERER_SOFTWARE;    break;
+		case 1:  flags |= SDL_RENDERER_ACCELERATED; break;
+		case 2:  // let SDL decide
+		         // fallthrough!
+		default: break;
+	}
+	renderer_ = SDL_CreateRenderer(window_, -1 , flags | SDL_RENDERER_TARGETTEXTURE);
 	SDL_RendererInfo renderer_info;
 	if (SDL_GetRendererInfo(renderer_, &renderer_info) == 0) {
 		if (renderer_info.flags & SDL_RENDERER_TARGETTEXTURE) {
@@ -3103,7 +3119,7 @@ void load_from_opendats_metadata(int resource_id, const char* extension, FILE** 
 				struct stat buf;
 				if (fstat(fileno(fp), &buf) == 0) {
 					*result = data_directory;
-					*size = buf.st_size;
+					*size = (int)buf.st_size;
 				} else {
 					perror(image_filename);
 					fclose(fp);
@@ -3827,7 +3843,7 @@ void process_events() {
 #endif
 				if (event.type == SDL_JOYBUTTONDOWN) {
 					if      (event.jbutton.button == SDL_JOYSTICK_BUTTON_Y)   joy_AY_buttons_state = -1; // Y (up)
-					else if (event.jbutton.button == SDL_JOYSTICK_BUTTON_X)   joy_X_button_state = -1;   // X (Shift)
+					else if (event.jbutton.button == SDL_JOYSTICK_BUTTON_X)   joy_X_button_state = 1;    // X (Shift)
 				}
 				else if (event.type == SDL_JOYBUTTONUP) {
 					if      (event.jbutton.button == SDL_JOYSTICK_BUTTON_Y)   joy_AY_buttons_state = 0;  // Y (up)
@@ -3837,6 +3853,16 @@ void process_events() {
 
 			case SDL_TEXTINPUT:
 				last_text_input = event.text.text[0]; // UTF-8 formatted char text input
+
+				// Make the +/- keys work on the main keyboard, on any keyboard layout.
+				// We check SDL_TEXTINPUT instead of SDL_KEYDOWN.
+				// If '+' is on Shift+something then we can't detect it in SDL_KEYDOWN,
+				// because event.key.keysym.sym only tells us what character would the key type without shift.
+				switch (last_text_input) {
+					case '-': last_key_scancode = SDL_SCANCODE_KP_MINUS; break;
+					case '+': last_key_scancode = SDL_SCANCODE_KP_PLUS;  break;
+				}
+
 				break;
 			case SDL_WINDOWEVENT:
 				// In case the user switches away while holding a key: do as if all keys were released.
