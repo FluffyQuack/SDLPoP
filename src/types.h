@@ -388,8 +388,6 @@ typedef struct frame_type {
 	byte flags;
 } frame_type;
 
-#define TROBS_MAX 300 //Fluffy (MultiRoomRendering): We increased the max of this from 30 as we most likely need a higher maximum since we add trobs from adjacent rooms, not only the current room
-
 enum frame_flags {
 	FRAME_WEIGHT_X = 0x1F,
 	FRAME_THIN = 0x20,
@@ -1396,7 +1394,7 @@ enum
 #define FALLING_SPEED_ACCEL_FEATHER 1
 #define ROOMCOUNT 24 // Max quantity of rooms for any level
 #define SCREEN_GAMEPLAY_HEIGHT 192 // Portion of the screen space dedicated to gameplay graphics
-#define TROBS_MAX 30
+#define TROBS_MAX 300 //Fluffy (MultiRoomRendering): We increased the max of this from 30 as we most likely need a higher maximum since we add trobs from adjacent rooms, not only the current room
 
 #endif
 
