@@ -273,8 +273,7 @@ void __pascal far restore_stuff() {
 
 // seg009:0E33
 int __pascal far key_test_quit() {
-	word key;
-	key = read_key();
+	word key = read_key();
 	if (key == (SDL_SCANCODE_Q | WITH_CTRL)) { // Ctrl+Q
 
 		#ifdef USE_REPLAY
@@ -292,8 +291,7 @@ int __pascal far key_test_quit() {
 // seg009:0E54
 const char* __pascal far check_param(const char *param) {
 	// stub
-	short arg_index;
-	for (arg_index = 1; arg_index < g_argc; ++arg_index) {
+	for (short arg_index = 1; arg_index < g_argc; ++arg_index) {
 
 		char* curr_arg = g_argv[arg_index];
 
@@ -447,7 +445,7 @@ void __pascal far set_loaded_palette(dat_pal_type far *palette_ptr) {
 	int dest_row, dest_index, source_row;
 	for (dest_row = dest_index = source_row = 0; dest_row < 16; ++dest_row, dest_index += 0x10) {
 		if (palette_ptr->row_bits & (1 << dest_row)) {
-			set_pal_arr(dest_index, 16, palette_ptr->vga + source_row*0x10, 1);
+			set_pal_arr(dest_index, 16, palette_ptr->vga + source_row*0x10);
 			++source_row;
 		}
 	}
@@ -586,13 +584,11 @@ chtab_type* __pascal load_sprites_from_file(int resource,int palette_bits, int q
 // seg009:11A8
 void __pascal far free_chtab(chtab_type *chtab_ptr) {
 	image_type far* curr_image;
-	word id;
-	word n_images;
 	if (graphics_mode == gmMcgaVga && chtab_ptr->has_palette_bits) {
 		chtab_palette_bits &= ~ chtab_ptr->chtab_palette_bits;
 	}
-	n_images = chtab_ptr->n_images;
-	for (id = 0; id < n_images; ++id) {
+	word n_images = chtab_ptr->n_images;
+	for (word id = 0; id < n_images; ++id) {
 		curr_image = chtab_ptr->images[id];
 		if (curr_image) {
 			SDL_FreeSurface(curr_image);
@@ -710,7 +706,7 @@ byte far* __pascal far decompress_lzg_ud(byte far *dest,const byte far *source,i
 	const byte* source_pos = source;
 	byte* dest_pos = dest;
 	word mask = 0;
-	short var_6 = dest_length - 1;
+	short dest_end = dest_length - 1;
 	do {
 		mask >>= 1;
 		if ((mask & 0xFF00) == 0) {
@@ -720,7 +716,7 @@ byte far* __pascal far decompress_lzg_ud(byte far *dest,const byte far *source,i
 			*(window_pos++) = *dest_pos = *(source_pos++);
 			dest_pos += stride;
 			if (--remaining == 0) {
-				dest_pos -= var_6;
+				dest_pos -= dest_end;
 				remaining = height;
 			}
 			if (window_pos >= window_end) window_pos = window;
@@ -734,7 +730,7 @@ byte far* __pascal far decompress_lzg_ud(byte far *dest,const byte far *source,i
 				*(window_pos++) = *dest_pos = *(copy_source++);
 				dest_pos += stride;
 				if (--remaining == 0) {
-					dest_pos -= var_6;
+					dest_pos -= dest_end;
 					remaining = height;
 				}
 				if (copy_source >= window_end) copy_source = window;
@@ -973,7 +969,7 @@ void __pascal far free_peel(peel_type *peel_ptr) {
 void __pascal far set_hc_pal() {
 	// stub
 	if (graphics_mode == gmMcgaVga) {
-		set_pal_arr(0, 16, custom->vga_palette, 1);
+		set_pal_arr(0, 16, custom->vga_palette);
 	} else {
 		// ...
 	}
@@ -1214,11 +1210,9 @@ int __pascal far get_char_width(byte character) {
 
 // seg009:3E99
 int __pascal far find_linebreak(const char far *text,int length,int break_width,int x_align) {
-	short curr_line_width; // in pixels
-	short last_break_pos; // in characters
 	int curr_char_pos = 0;
-	last_break_pos = 0;
-	curr_line_width = 0;
+	short last_break_pos = 0; // in characters
+	short curr_line_width = 0; // in pixels
 	const char* text_pos = text;
 	while (curr_char_pos < length) {
 		curr_line_width += get_char_width(*text_pos);
@@ -1585,22 +1579,18 @@ int __pascal far input_str(const rect_type far *rect,char *buffer,int max_length
 	SDL_SetTextInputRect(&sdlrect);
 	SDL_StartTextInput();
 
-	short length;
 	word key;
-	short cursor_visible;
 	short current_xpos;
-	short ypos;
-	short init_length;
-	length = 0;
-	cursor_visible = 0;
+	short length = 0;
+	short cursor_visible = 0;
 	draw_rect(rect, bgcolor);
-	init_length = strlen(initial);
+	short init_length = strlen(initial);
 	if (has_initial) {
 		strcpy(buffer, initial);
 		length = init_length;
 	}
 	current_xpos = rect->left + arg_4;
-	ypos = get_text_center_y(rect);
+	short ypos = get_text_center_y(rect);
 	set_curr_pos(current_xpos, ypos);
 	/*current_target_surface->*/textstate.textcolor = color;
 	draw_cstring(initial);
@@ -1759,8 +1749,7 @@ void __pascal far restore_peel(peel_type* peel_ptr) {
 // seg009:3BE9
 peel_type* __pascal far read_peel_from_screen(const rect_type far *rect) {
 	// stub
-	peel_type* result;
-	result = calloc(1, sizeof(peel_type));
+	peel_type* result = calloc(1, sizeof(peel_type));
 	//memset(&result, 0, sizeof(result));
 	result->rect = *rect;
 #ifndef USE_ALPHA
@@ -3003,14 +2992,14 @@ void update_screen() {
 }
 
 // seg009:9289
-void __pascal far set_pal_arr(int start,int count,const rgb_type far *array,int vsync) {
+void __pascal far set_pal_arr(int start,int count,const rgb_type far *array) {
 	// stub
 	int i;
 	for (i = 0; i < count; ++i) {
 		if (array) {
-			set_pal(start + i, array[i].r, array[i].g, array[i].b, vsync);
+			set_pal(start + i, array[i].r, array[i].g, array[i].b);
 		} else {
-			set_pal(start + i, 0, 0, 0, vsync);
+			set_pal(start + i, 0, 0, 0);
 		}
 	}
 }
@@ -3018,7 +3007,7 @@ void __pascal far set_pal_arr(int start,int count,const rgb_type far *array,int 
 rgb_type palette[256];
 
 // seg009:92DF
-void __pascal far set_pal(int index,int red,int green,int blue,int vsync) {
+void __pascal far set_pal(int index,int red,int green,int blue) {
 	// stub
 	//palette[index] = ((red&0x3F)<<2)|((green&0x3F)<<2<<8)|((blue&0x3F)<<2<<16);
 	palette[index].r = red;
@@ -4122,7 +4111,6 @@ void __pascal far fade_in_2(surface_type near *source_surface,int which_rows) {
 palette_fade_type far *__pascal make_pal_buffer_fadein(surface_type *source_surface,int which_rows,int wait_time) {
 	palette_fade_type far* palette_buffer;
 	word curr_row;
-	word var_8;
 	word curr_row_mask;
 	palette_buffer = (palette_fade_type*) malloc_far(sizeof(palette_fade_type));
 	palette_buffer->which_rows = which_rows;
@@ -4132,11 +4120,10 @@ palette_fade_type far *__pascal make_pal_buffer_fadein(surface_type *source_surf
 	palette_buffer->proc_fade_frame = &fade_in_frame;
 	read_palette_256(palette_buffer->original_pal);
 	memcpy_far(palette_buffer->faded_pal, palette_buffer->original_pal, sizeof(palette_buffer->faded_pal));
-	var_8 = 0;
 	for (curr_row = 0, curr_row_mask = 1; curr_row < 0x10; ++curr_row, curr_row_mask<<=1) {
 		if (which_rows & curr_row_mask) {
 			memset_far(palette_buffer->faded_pal + (curr_row<<4), 0, sizeof(rgb_type[0x10]));
-			set_pal_arr(curr_row<<4, 0x10, NULL, (var_8++&3)==0);
+			set_pal_arr(curr_row<<4, 0x10, NULL);
 		}
 	}
 	//method_1_blit_rect(onscreen_surface_, source_surface, &screen_rect, &screen_rect, 0);
@@ -4183,10 +4170,9 @@ int __pascal far fade_in_frame(palette_fade_type far *palette_buffer) {
 			}
 		}
 	}
-	column = 0;
 	for (start = 0, current_row_mask = 1; start<0x100; start+=0x10, current_row_mask<<=1) {
 		if (palette_buffer->which_rows & current_row_mask) {
-			set_pal_arr(start, 0x10, palette_buffer->faded_pal + start, (column++&3)==0);
+			set_pal_arr(start, 0x10, palette_buffer->faded_pal + start);
 		}
 	}
 
@@ -4273,11 +4259,10 @@ void __pascal far pal_restore_free_fadeout(palette_fade_type far *palette_buffer
 int __pascal far fade_out_frame(palette_fade_type far *palette_buffer) {
 	rgb_type* faded_pal_ptr;
 	word start;
-	word var_8;
 	word column;
 	word current_row_mask;
 	byte* curr_color_ptr;
-	var_8 = 1;
+	word finished_fading = 1;
 	++palette_buffer->fade_pos; // modified
 	/**/start_timer(timer_1, palette_buffer->wait_time); // too slow?
 	for (start=0,current_row_mask=1; start<0x100; start+=0x10, current_row_mask<<=1) {
@@ -4289,25 +4274,24 @@ int __pascal far fade_out_frame(palette_fade_type far *palette_buffer) {
 				curr_color_ptr = &faded_pal_ptr[column].r;
 				if (*curr_color_ptr != 0) {
 					--*curr_color_ptr;
-					var_8 = 0;
+					finished_fading = 0;
 				}
 				curr_color_ptr = &faded_pal_ptr[column].g;
 				if (*curr_color_ptr != 0) {
 					--*curr_color_ptr;
-					var_8 = 0;
+					finished_fading = 0;
 				}
 				curr_color_ptr = &faded_pal_ptr[column].b;
 				if (*curr_color_ptr != 0) {
 					--*curr_color_ptr;
-					var_8 = 0;
+					finished_fading = 0;
 				}
 			}
 		}
 	}
-	column = 0;
 	for (start = 0, current_row_mask = 1; start<0x100; start+=0x10, current_row_mask<<=1) {
 		if (palette_buffer->which_rows & current_row_mask) {
-			set_pal_arr(start, 0x10, palette_buffer->faded_pal + start, (column++&3)==0);
+			set_pal_arr(start, 0x10, palette_buffer->faded_pal + start);
 		}
 	}
 
@@ -4339,21 +4323,19 @@ int __pascal far fade_out_frame(palette_fade_type far *palette_buffer) {
 	SDL_UnlockSurface(offscreen_surface);
 
 	do_simple_wait(timer_1); // can interrupt fading of cutscene
-	return var_8;
+	return finished_fading;
 }
 
 // seg009:1F28
 void __pascal far read_palette_256(rgb_type far *target) {
-	int i;
-	for (i = 0; i < 256; ++i) {
+	for (int i = 0; i < 256; ++i) {
 		target[i] = palette[i];
 	}
 }
 
 // seg009:1F5E
 void __pascal far set_pal_256(rgb_type far *source) {
-	int i;
-	for (i = 0; i < 256; ++i) {
+	for (int i = 0; i < 256; ++i) {
 		palette[i] = source[i];
 	}
 }

@@ -172,9 +172,9 @@ void __pascal far init_game_main() {
 		// Guard palettes
 		guard_palettes = (byte*) load_from_opendats_alloc(10, "bin", NULL, NULL);
 		// (blood, hurt flash) #E00030 = red
-		set_pal(12, 0x38, 0x00, 0x0C, 1);
+		set_pal(12, 0x38, 0x00, 0x0C);
 		// (palace wall pattern) #C09850 = light brown
-		set_pal( 6, 0x30, 0x26, 0x14, 0);
+		set_pal( 6, 0x30, 0x26, 0x14);
 
 		// Level color variations (1.3)
 		level_var_palettes = load_from_opendats_alloc(20, "bin", NULL, NULL);
@@ -203,7 +203,6 @@ jmp_buf setjmp_buf;
 void __pascal far start_game() {
 #ifdef USE_COPYPROT
 	word which_entry;
-	word pos;
 	word entry_used[40];
 	byte letts_used[26];
 #endif
@@ -225,7 +224,7 @@ void __pascal far start_game() {
 	copyprot_plac = prandom(13);
 	memset(&entry_used, 0, sizeof(entry_used));
 	memset(&letts_used, 0, sizeof(letts_used));
-	for (pos = 0; pos < 14; ++pos) {
+	for (word pos = 0; pos < 14; ++pos) {
 		do {
 			if (pos == copyprot_plac) {
 				which_entry = copyprot_idx = prandom(39);
@@ -557,11 +556,9 @@ Uint32 temp_shift_release_callback(Uint32 interval, void *param) {
 // seg000:04CD
 int __pascal far process_key() {
 	char sprintf_temp[80];
-	int key;
 	const char* answer_text = NULL;
-	word need_show_text;
-	need_show_text = 0;
-	key = key_test_quit();
+	word need_show_text = 0;
+	int key = key_test_quit();
 
 #ifdef USE_MENU
 	if (is_paused && is_menu_shown) {
@@ -1095,8 +1092,6 @@ static void switchRoom(int activeRoom, int room) //Fluffy (MultiRoomRendering)
 
 // seg000:09B6
 void __pascal far draw_game_frame() {
-	short var_2;
-	
 	if (need_full_redraw) {
 		//redraw_screen(0); //Fluffy (MultiRoomRendering): Commented away since we always render screen below
 		need_full_redraw = 0;
@@ -1183,11 +1178,11 @@ void __pascal far draw_game_frame() {
 			if (text_time_total == 288 && text_time_remaining < 72) {
 				// 288: press button to continue
 				// Blink the message:
-				var_2 = text_time_remaining % 12;
-				if (var_2 > 3) {
+				short blink_frame = text_time_remaining % 12;
+				if (blink_frame > 3) {
 					erase_bottom_text(0);
 				} else {
-					if (var_2 == 3) {
+					if (blink_frame == 3) {
 						display_text_bottom("Press Button to Continue");
 						play_sound_from_buffer(sound_pointers[sound_38_blink]); // press button blink
 					}
@@ -1199,8 +1194,7 @@ void __pascal far draw_game_frame() {
 
 // seg000:0B12
 void __pascal far anim_tile_modif() {
-	word tilepos;
-	for (tilepos = 0; tilepos < 30; ++tilepos) {
+	for (word tilepos = 0; tilepos < 30; ++tilepos) {
 		switch (get_curr_tile(tilepos)) {
 			case tiles_10_potion:
 				start_anim_potion(drawn_room, tilepos);
@@ -1234,7 +1228,6 @@ void __pascal far load_sounds(int first,int last) {
 //	dat_type* digi2_dat = NULL;
 	dat_type* digi3_dat = NULL;
 	dat_type* midi_dat = NULL;
-	short current;
 	ibm_dat = open_dat("IBM_SND1.DAT", 0);
 	if (sound_flags & sfDigi) {
 		digi1_dat = open_dat("DIGISND1.DAT", 0);
@@ -1247,7 +1240,7 @@ void __pascal far load_sounds(int first,int last) {
 
 	load_sound_names();
 
-	for (current = first; current <= last; ++current) {
+	for (short current = first; current <= last; ++current) {
 		if (sound_pointers[current] != NULL) continue;
 		/*if (demo_mode) {
 			sound_pointers[current] = decompress_sound((sound_buffer_type*) load_from_opendats_alloc(current + 10000));
@@ -1272,7 +1265,6 @@ void __pascal far load_opt_sounds(int first,int last) {
 	dat_type* ibm_dat = NULL;
 	dat_type* digi_dat = NULL;
 	dat_type* midi_dat = NULL;
-	short current;
 	ibm_dat = open_dat("IBM_SND2.DAT", 0);
 	if (sound_flags & sfDigi) {
 		digi_dat = open_dat("DIGISND2.DAT", 0);
@@ -1280,7 +1272,7 @@ void __pascal far load_opt_sounds(int first,int last) {
 	if (sound_flags & sfMidi) {
 		midi_dat = open_dat("MIDISND2.DAT", 0);
 	}
-	for (current = first; current <= last; ++current) {
+	for (short current = first; current <= last; ++current) {
 		//We don't free sounds, so load only once.
 		if (sound_pointers[current] != NULL) continue;
 		/*if (demo_mode) {
@@ -1336,10 +1328,10 @@ void __pascal far load_lev_spr(int level) {
 		if (level_color != 0) {
 			byte* env_pal = level_var_palettes + 0x30*(level_color-1);
 			byte* wall_pal = env_pal + 0x30 * custom->tbl_level_type[current_level];
-			set_pal_arr(0x50, 0x10, (rgb_type*)env_pal, 1);
-			set_pal_arr(0x60, 0x10, (rgb_type*)wall_pal, 1);
-			set_chtab_palette(chtab_addrs[id_chtab_6_environment], env_pal, 0x10);
-			set_chtab_palette(chtab_addrs[id_chtab_7_environmentwall], wall_pal, 0x10);
+			set_pal_arr(0x50, 0x10, (rgb_type*)env_pal);
+			set_pal_arr(0x60, 0x10, (rgb_type*)wall_pal);
+			set_chtab_palette(chtab_addrs[id_chtab_6_environment], env_pal);
+			set_chtab_palette(chtab_addrs[id_chtab_7_environmentwall], wall_pal);
 		}
 	}
 
@@ -1359,8 +1351,7 @@ void __pascal far load_lev_spr(int level) {
 
 // seg000:0E6C
 void __pascal far load_level() {
-	dat_type* dathandle;
-	dathandle = open_dat("LEVELS.DAT", 0);
+	dat_type* dathandle = open_dat("LEVELS.DAT", 0);
 	load_from_opendats_to_area(current_level + 2000, &level, sizeof(level), "bin");
 	close_dat(dathandle);
 
@@ -1636,9 +1627,8 @@ void __pascal far draw_kid_hp(short curr_hp,short max_hp) {
 // seg000:1159
 void __pascal far draw_guard_hp(short curr_hp,short max_hp) {
 	short drawn_hp_index;
-	short guard_charid;
 	if (chtab_addrs[id_chtab_5_guard] == NULL) return;
-	guard_charid = Guard.charid;
+	short guard_charid = Guard.charid;
 	if (guard_charid != charid_4_skeleton &&
 		guard_charid != charid_24_mouse &&
 		// shadow has HP only on level 12
@@ -1873,9 +1863,8 @@ void __pascal far check_sword_vs_sword() {
 // seg000:136A
 void __pascal far load_chtab_from_file(int chtab_id,int resource,const char near *filename,int palette_bits) {
 	//printf("Loading chtab %d, id %d from %s\n",chtab_id,resource,filename);
-	dat_type* dathandle;
 	if (chtab_addrs[chtab_id] != NULL) return;
-	dathandle = open_dat(filename, 'G');
+	dat_type* dathandle = open_dat(filename, 'G');
 	chtab_addrs[chtab_id] = load_sprites_from_file(resource, palette_bits, 1, chtab_id); //Fluffy (Multiplayer): Carry over chtab_id
 	close_dat(dathandle);
 }
@@ -1906,11 +1895,9 @@ byte optgraf_max[] = {0x09, 0x1F, 0x4D, 0x53, 0x5B, 0x7B, 0x8F, 0x0D};
 // seg000:13FC
 void __pascal far load_more_opt_graf(const char *filename) {
 	// stub
-	dat_type* dathandle;
 	dat_shpl_type area;
-	short graf_index;
-	dathandle = NULL;
-	for (graf_index = 0; graf_index < 8; ++graf_index) {
+	dat_type* dathandle = NULL;
+	for (short graf_index = 0; graf_index < 8; ++graf_index) {
 		/*if (...) */ {
 			if (dathandle == NULL) {
 				dathandle = open_dat(filename, 'G');
@@ -2052,7 +2039,6 @@ int __pascal far parse_grmode() {
 
 // seg000:172C
 void __pascal far gen_palace_wall_colors() {
-	dword old_randseed;
 	word prev_color;
 	short row;
 	short subrow;
@@ -2060,7 +2046,7 @@ void __pascal far gen_palace_wall_colors() {
 	short column;
 	word color;
 
-	old_randseed = random_seed;
+	dword old_randseed = random_seed;
 	random_seed = drawn_room;
 	prandom(1); // discard
 	for (row = 0; row < 3; row++) {
@@ -2193,7 +2179,6 @@ Uint64 last_transition_counter;
 
 // seg000:1BB3
 void __pascal far transition_ltr() {
-	short position;
 	rect_type rect;
 	rect.top = 0;
 	rect.bottom = 200;
@@ -2209,7 +2194,7 @@ void __pascal far transition_ltr() {
 	Uint64 counters_per_frame = perf_frequency / transition_fps;
 	last_transition_counter = SDL_GetPerformanceCounter();
 	int overshoot = 0;
-	for (position = 0; position < 320; position += 2) {
+	for (short position = 0; position < 320; position += 2) {
 		method_1_blit_rect(onscreen_surface_, offscreen_surface, &rect, &rect, 0);
 		rect.left += 2;
 		rect.right += 2;
@@ -2251,14 +2236,13 @@ void __pascal far release_title_images() {
 void __pascal far draw_full_image(enum full_image_id id) {
 	image_type* decoded_image;
 	image_type* mask = NULL;
-	int xpos, ypos, blit;
 
 	if (id >= MAX_FULL_IMAGES) return;
 	if (NULL == *full_image[id].chtab) return;
 	decoded_image = (*full_image[id].chtab)->images[full_image[id].id];
-	blit = full_image[id].blitter;
-	xpos = full_image[id].xpos;
-	ypos = full_image[id].ypos;
+	int blit = full_image[id].blitter;
+	int xpos = full_image[id].xpos;
+	int ypos = full_image[id].ypos;
 
 	switch (blit) {
 	case blitters_white:
@@ -2302,12 +2286,10 @@ const char* get_save_path(char* custom_path_buffer, size_t max_len) {
 
 // seg000:1D45
 void __pascal far save_game() {
-	word success;
-	FILE* handle;
-	success = 0;
+	word success = 0;
 	char custom_save_path[POP_MAX_PATH];
 	const char* save_path = get_save_path(custom_save_path, sizeof(custom_save_path));
-	handle = fopen(save_path, "wb");
+	FILE* handle = fopen(save_path, "wb");
 	if (handle == NULL) goto loc_1DB8;
 	if (fwrite(&rem_min, 1, 2, handle) == 2) goto loc_1DC9;
 	loc_1D9B:
@@ -2334,12 +2316,10 @@ void __pascal far save_game() {
 
 // seg000:1E38
 short __pascal far load_game() {
-	word success;
-	FILE* handle;
-	success = 0;
+	word success = 0;
 	char custom_save_path[POP_MAX_PATH];
 	const char* save_path = get_save_path(custom_save_path, sizeof(custom_save_path));
-	handle = fopen(save_path, "rb");
+	FILE* handle = fopen(save_path, "rb");
 	if (handle == NULL) goto loc_1E99;
 	if (fread(&rem_min, 1, 2, handle) == 2) goto loc_1E9E;
 	loc_1E8E:
@@ -2362,7 +2342,6 @@ short __pascal far load_game() {
 
 // seg000:1F02
 void __pascal far clear_screen_and_sounds() {
-	short index;
 	stop_sounds();
 	current_target_surface = rect_sthg(onscreen_surface_, &screen_rect);
 
@@ -2370,7 +2349,7 @@ void __pascal far clear_screen_and_sounds() {
 	is_ending_sequence = false; // added
 	peels_count = 0;
 	// should these be freed?
-	for (index = 2; index < id_chtab_num; ++index) { //Fluffy (Multiplayer): Replaced hardcoded chtab maximum with enum reference
+	for (short index = 2; index < id_chtab_num; ++index) { //Fluffy (Multiplayer): Replaced hardcoded chtab maximum with enum reference
 		if (chtab_addrs[index]) {
 			// Original code does not free these?
 			free_chtab(chtab_addrs[index]);
@@ -2449,8 +2428,7 @@ void __pascal far free_optsnd_chtab() {
 
 // seg000:22C8
 void __pascal far load_title_images(int bgcolor) {
-	dat_type* dathandle;
-	dathandle = open_dat("TITLE.DAT", 'G');
+	dat_type* dathandle = open_dat("TITLE.DAT", 'G');
 	chtab_title40 = load_sprites_from_file(40, 1<<11, 1, -1); //Fluffy (Multiplayer): Added last argument
 	chtab_title50 = load_sprites_from_file(50, 1<<12, 1, -1); //Fluffy (Multiplayer): Added last argument
 	close_dat(dathandle);
@@ -2459,14 +2437,14 @@ void __pascal far load_title_images(int bgcolor) {
 		SDL_Color color;
 		if (bgcolor) {
 			// RGB(4,0,18h) = #100060 = dark blue
-			set_pal((find_first_pal_row(1<<11) << 4) + 14, 0x04, 0x00, 0x18, 1);
+			set_pal((find_first_pal_row(1<<11) << 4) + 14, 0x04, 0x00, 0x18);
 			color.r = 0x10;
 			color.g = 0x00;
 			color.b = 0x60;
 			color.a = 0xFF;
 		} else {
 			// RGB(20h,0,0) = #800000 = dark red
-			set_pal((find_first_pal_row(1<<11) << 4) + 14, 0x20, 0x00, 0x00, 1);
+			set_pal((find_first_pal_row(1<<11) << 4) + 14, 0x20, 0x00, 0x00);
 			color.r = 0x80;
 			color.g = 0x00;
 			color.b = 0x00;
