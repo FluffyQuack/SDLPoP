@@ -36,7 +36,7 @@ word need_redraw_because_flipped;
 void fix_sound_priorities(void);
 
 // seg000:0000
-void far pop_main() {
+void pop_main() {
 	if (check_param("--version") || check_param("-v")) {
 		printf ("SDLPoP v%s\n", SDLPOP_VERSION);
 		exit(0);
@@ -164,7 +164,7 @@ void ResetMultiRoomRendering() //Fluffy (MultiRoomRendering)
 }
 
 // seg000:024F
-void __pascal far init_game_main() {
+void init_game_main() {
 	doorlink1_ad = /*&*/level.doorlinks1;
 	doorlink2_ad = /*&*/level.doorlinks2;
 	prandom(1);
@@ -200,7 +200,7 @@ word first_start = 1;
 // data:4C38
 jmp_buf setjmp_buf;
 // seg000:0358
-void __pascal far start_game() {
+void start_game() {
 #ifdef USE_COPYPROT
 	word which_entry;
 	word entry_used[40];
@@ -554,7 +554,7 @@ Uint32 temp_shift_release_callback(Uint32 interval, void *param) {
 }
 
 // seg000:04CD
-int __pascal far process_key() {
+int process_key() {
 	char sprintf_temp[80];
 	const char* answer_text = NULL;
 	word need_show_text = 0;
@@ -871,7 +871,7 @@ int __pascal far process_key() {
 }
 
 // seg000:08EB
-void __pascal far play_frame() {
+void play_frame() {
 	// play feather fall music if there is more than 1 second of feather fall left
 	if (fixes->fix_quicksave_during_feather && is_feather_fall >= 10 && !check_sound_playing()) {
 		play_sound(sound_39_low_weight);
@@ -1091,7 +1091,7 @@ static void switchRoom(int activeRoom, int room) //Fluffy (MultiRoomRendering)
 }
 
 // seg000:09B6
-void __pascal far draw_game_frame() {
+void draw_game_frame() {
 	if (need_full_redraw) {
 		//redraw_screen(0); //Fluffy (MultiRoomRendering): Commented away since we always render screen below
 		need_full_redraw = 0;
@@ -1108,7 +1108,7 @@ void __pascal far draw_game_frame() {
 				//redraw_screen(0); //Fluffy (MultiRoomRendering): Commented away since we always render screen below
 			} else {
 				//Fluffy (MultiRoomRendering): Commented following away away since we always render entire screen below
-				/*memset_near(&table_counts, 0, sizeof(table_counts));
+				/*memset(&table_counts, 0, sizeof(table_counts));
 				draw_moving();
 				draw_tables();
 				if (is_blind_mode) {
@@ -1193,7 +1193,7 @@ void __pascal far draw_game_frame() {
 }
 
 // seg000:0B12
-void __pascal far anim_tile_modif() {
+void anim_tile_modif() {
 	for (word tilepos = 0; tilepos < 30; ++tilepos) {
 		switch (get_curr_tile(tilepos)) {
 			case tiles_10_potion:
@@ -1222,7 +1222,7 @@ void __pascal far anim_tile_modif() {
 }
 
 // seg000:0B72
-void __pascal far load_sounds(int first,int last) {
+void load_sounds(int first,int last) {
 	dat_type* ibm_dat = NULL;
 	dat_type* digi1_dat = NULL;
 //	dat_type* digi2_dat = NULL;
@@ -1260,7 +1260,7 @@ void __pascal far load_sounds(int first,int last) {
 }
 
 // seg000:0C5E
-void __pascal far load_opt_sounds(int first,int last) {
+void load_opt_sounds(int first,int last) {
 	// stub
 	dat_type* ibm_dat = NULL;
 	dat_type* digi_dat = NULL;
@@ -1295,7 +1295,7 @@ const char*const tbl_envir_gr[] = {"", "C", "C", "E", "E", "V"};
 // data:03D0
 const char*const tbl_envir_ki[] = {"DUNGEON", "PALACE"};
 // seg000:0D20
-void __pascal far load_lev_spr(int level) {
+void load_lev_spr(int level) {
 	dat_type* dathandle;
 	short guardtype;
 	char filename[20];
@@ -1350,7 +1350,7 @@ void __pascal far load_lev_spr(int level) {
 }
 
 // seg000:0E6C
-void __pascal far load_level() {
+void load_level() {
 	dat_type* dathandle = open_dat("LEVELS.DAT", 0);
 	load_from_opendats_to_area(current_level + 2000, &level, sizeof(level), "bin");
 	close_dat(dathandle);
@@ -1391,7 +1391,7 @@ void reset_level_unused_fields(bool loading_clean_level) {
 
 // seg000:0EA8
 // returns 1 if level is restarted, 0 otherwise
-int __pascal far play_kid_frame() {
+int play_kid_frame() {
 	loadkid_and_opp();
 	load_fram_det_col();
 	check_killed_shadow();
@@ -1428,7 +1428,7 @@ int __pascal far play_kid_frame() {
 }
 
 // seg000:0F48
-void __pascal far play_guard_frame() {
+void play_guard_frame() {
 	if (Guard.direction != dir_56_none) {
 		loadshad_and_opp();
 		load_fram_det_col();
@@ -1455,7 +1455,7 @@ void __pascal far play_guard_frame() {
 }
 
 // seg000:0FBD
-void __pascal far check_the_end() {
+void check_the_end() {
 	if (next_room != 0 && next_room != drawn_room) {
 		drawn_room = next_room;
 		load_room_links();
@@ -1501,7 +1501,7 @@ void __pascal far check_the_end() {
 }
 
 // seg000:1009
-void __pascal far check_fall_flo() {
+void check_fall_flo() {
 	// Special event: falling floors
 	if (current_level == /*13*/ custom->loose_tiles_level &&
 			(drawn_room == /*23*/ custom->loose_tiles_room_1 || drawn_room == /*16*/ custom->loose_tiles_room_2)
@@ -1580,7 +1580,7 @@ void get_joystick_state_hor_only(int raw_x, int axis_state[2]) {
 }
 
 // seg000:1051
-void __pascal far read_joyst_control() {
+void read_joyst_control() {
 
 	if (joystick_only_horizontal) {
 		get_joystick_state_hor_only(joy_axis[SDL_CONTROLLER_AXIS_LEFTX], joy_left_stick_states);
@@ -1612,7 +1612,7 @@ void __pascal far read_joyst_control() {
 }
 
 // seg000:10EA
-void __pascal far draw_kid_hp(short curr_hp,short max_hp) {
+void draw_kid_hp(short curr_hp,short max_hp) {
 	short drawn_hp_index;
 	for (drawn_hp_index = curr_hp; drawn_hp_index < max_hp; ++drawn_hp_index) {
 		// empty HP
@@ -1625,7 +1625,7 @@ void __pascal far draw_kid_hp(short curr_hp,short max_hp) {
 }
 
 // seg000:1159
-void __pascal far draw_guard_hp(short curr_hp,short max_hp) {
+void draw_guard_hp(short curr_hp,short max_hp) {
 	short drawn_hp_index;
 	if (chtab_addrs[id_chtab_5_guard] == NULL) return;
 	short guard_charid = Guard.charid;
@@ -1644,7 +1644,7 @@ void __pascal far draw_guard_hp(short curr_hp,short max_hp) {
 }
 
 // seg000:11EC
-void __pascal far add_life() {
+void add_life() {
 	short hpmax = hitp_max;
 	++hpmax;
 	// CusPop: set maximum number of hitpoints (max_hitp_allowed, default = 10)
@@ -1655,12 +1655,12 @@ void __pascal far add_life() {
 }
 
 // seg000:1200
-void __pascal far set_health_life() {
+void set_health_life() {
 	hitp_delta = hitp_max - hitp_curr;
 }
 
 // seg000:120B
-void __pascal far draw_hp() {
+void draw_hp() {
 	if (hitp_delta) {
 		draw_kid_hp(hitp_curr, hitp_max);
 	}
@@ -1685,7 +1685,7 @@ void __pascal far draw_hp() {
 }
 
 // seg000:127B
-void __pascal far do_delta_hp() {
+void do_delta_hp() {
 	// level 12: if the shadow is hurt, Kid is also hurt
 	if (Opp.charid == charid_1_shadow &&
 		current_level == 12 &&
@@ -1830,7 +1830,7 @@ void fix_sound_priorities() {
 }
 
 // seg000:12C5
-void __pascal far play_sound(int sound_id) {
+void play_sound(int sound_id) {
 	//printf("Would play sound %d\n", sound_id);
 	if (next_sound < 0 || sound_prio_table[sound_id] <= sound_prio_table[next_sound]) {
 		if (NULL == sound_pointers[sound_id]) return;
@@ -1841,7 +1841,7 @@ void __pascal far play_sound(int sound_id) {
 }
 
 // seg000:1304
-void __pascal far play_next_sound() {
+void play_next_sound() {
 	if (next_sound >= 0) {
 		if (!check_sound_playing() ||
 			(sound_interruptible[current_sound] != 0 && sound_prio_table[next_sound] <= sound_prio_table[current_sound])
@@ -1854,14 +1854,14 @@ void __pascal far play_next_sound() {
 }
 
 // seg000:1353
-void __pascal far check_sword_vs_sword() {
+void check_sword_vs_sword() {
 	if (Kid.frame == 167 || Guard.frame == 167) {
 		play_sound(sound_10_sword_vs_sword); // sword vs. sword
 	}
 }
 
 // seg000:136A
-void __pascal far load_chtab_from_file(int chtab_id,int resource,const char near *filename,int palette_bits) {
+void load_chtab_from_file(int chtab_id,int resource,const char* filename,int palette_bits) {
 	//printf("Loading chtab %d, id %d from %s\n",chtab_id,resource,filename);
 	if (chtab_addrs[chtab_id] != NULL) return;
 	dat_type* dathandle = open_dat(filename, 'G');
@@ -1870,7 +1870,7 @@ void __pascal far load_chtab_from_file(int chtab_id,int resource,const char near
 }
 
 // seg000:13BA
-void __pascal far free_all_chtabs_from(int first) {
+void free_all_chtabs_from(int first) {
 	word chtab_id;
 	free_peels();
 	for (chtab_id = first; chtab_id < id_chtab_num; ++chtab_id) { //Fluffy (Multiplayer): Replaced hardcoded chtab maximum with enum reference
@@ -1882,7 +1882,7 @@ void __pascal far free_all_chtabs_from(int first) {
 }
 
 // seg009:12EF
-void __pascal far load_one_optgraf(chtab_type* chtab_ptr,dat_pal_type far *pal_ptr,int base_id,int min_index,int max_index) {
+void load_one_optgraf(chtab_type* chtab_ptr,dat_pal_type* pal_ptr,int base_id,int min_index,int max_index) {
 	short index;
 	for (index = min_index; index <= max_index; ++index) {
 		image_type* image = load_image(base_id + index + 1, pal_ptr);
@@ -1893,7 +1893,7 @@ void __pascal far load_one_optgraf(chtab_type* chtab_ptr,dat_pal_type far *pal_p
 byte optgraf_min[] = {0x01, 0x1E, 0x4B, 0x4E, 0x56, 0x65, 0x7F, 0x0A};
 byte optgraf_max[] = {0x09, 0x1F, 0x4D, 0x53, 0x5B, 0x7B, 0x8F, 0x0D};
 // seg000:13FC
-void __pascal far load_more_opt_graf(const char *filename) {
+void load_more_opt_graf(const char* filename) {
 	// stub
 	dat_shpl_type area;
 	dat_type* dathandle = NULL;
@@ -1913,7 +1913,7 @@ void __pascal far load_more_opt_graf(const char *filename) {
 }
 
 // seg000:148D
-int __pascal far do_paused() {
+int do_paused() {
 #ifdef USE_REPLAY
 	if (replaying && skipping_replay) return 0;
 #endif
@@ -1961,7 +1961,7 @@ int __pascal far do_paused() {
 }
 
 // seg000:1500
-void __pascal far read_keyb_control() {
+void read_keyb_control() {
 
 	if (key_states[SDL_SCANCODE_UP] || key_states[SDL_SCANCODE_HOME] || key_states[SDL_SCANCODE_PAGEUP]
 	    || key_states[SDL_SCANCODE_KP_8] || key_states[SDL_SCANCODE_KP_7] || key_states[SDL_SCANCODE_KP_9]
@@ -1992,8 +1992,8 @@ void __pascal far read_keyb_control() {
 }
 
 // seg000:156D
-void __pascal far copy_screen_rect(const rect_type far *source_rect_ptr) {
-	const rect_type* far target_rect_ptr;
+void copy_screen_rect(const rect_type* source_rect_ptr) {
+	const rect_type* target_rect_ptr;
 	rect_type target_rect;
 	if (upside_down) {
 		target_rect_ptr = &target_rect;
@@ -2010,13 +2010,13 @@ void __pascal far copy_screen_rect(const rect_type far *source_rect_ptr) {
 }
 
 // seg000:15E9
-void __pascal far toggle_upside() {
+void toggle_upside() {
 	upside_down = ~ upside_down;
 	need_redraw_because_flipped = 1;
 }
 
 // seg000:15F8
-void __pascal far feather_fall() {
+void feather_fall() {
 	//printf("slow fall started at: rem_min = %d, rem_tick = %d\n", rem_min, rem_tick);
 	if (fixes->fix_quicksave_during_feather) {
 		// feather fall is treated as a timer
@@ -2031,14 +2031,14 @@ void __pascal far feather_fall() {
 }
 
 // seg000:1618
-int __pascal far parse_grmode() {
+int parse_grmode() {
 	// stub
 	set_gr_mode(gmMcgaVga);
 	return gmMcgaVga;
 }
 
 // seg000:172C
-void __pascal far gen_palace_wall_colors() {
+void gen_palace_wall_colors() {
 	word prev_color;
 	short row;
 	short subrow;
@@ -2074,7 +2074,7 @@ void __pascal far gen_palace_wall_colors() {
 const rect_type rect_titles = {106,24,195,296};
 
 // seg000:17E6
-void __pascal far show_title() {
+void show_title() {
 	ResetMultiRoomRendering(); //Fluffy (MultiRoomRendering)
 
 	load_opt_sounds(sound_50_story_2_princess, sound_55_story_1_absence); // main theme, story, princess door
@@ -2178,7 +2178,7 @@ void __pascal far show_title() {
 Uint64 last_transition_counter;
 
 // seg000:1BB3
-void __pascal far transition_ltr() {
+void transition_ltr() {
 	rect_type rect;
 	rect.top = 0;
 	rect.bottom = 200;
@@ -2221,7 +2221,7 @@ void __pascal far transition_ltr() {
 }
 
 // seg000:1C0F
-void __pascal far release_title_images() {
+void release_title_images() {
 	if (chtab_title50) {
 		free_chtab(chtab_title50);
 		chtab_title50 = NULL;
@@ -2233,7 +2233,7 @@ void __pascal far release_title_images() {
 }
 
 // seg000:1C3A
-void __pascal far draw_full_image(enum full_image_id id) {
+void draw_full_image(enum full_image_id id) {
 	image_type* decoded_image;
 	image_type* mask = NULL;
 
@@ -2269,7 +2269,7 @@ void __pascal far draw_full_image(enum full_image_id id) {
 }
 
 // seg000:1D2C
-void __pascal far load_kid_sprite() {
+void load_kid_sprite() {
 	load_chtab_from_file(id_chtab_2_kid, 400, "KID.DAT", 1<<7);
 }
 
@@ -2285,7 +2285,7 @@ const char* get_save_path(char* custom_path_buffer, size_t max_len) {
 }
 
 // seg000:1D45
-void __pascal far save_game() {
+void save_game() {
 	word success = 0;
 	char custom_save_path[POP_MAX_PATH];
 	const char* save_path = get_save_path(custom_save_path, sizeof(custom_save_path));
@@ -2315,7 +2315,7 @@ void __pascal far save_game() {
 }
 
 // seg000:1E38
-short __pascal far load_game() {
+short load_game() {
 	word success = 0;
 	char custom_save_path[POP_MAX_PATH];
 	const char* save_path = get_save_path(custom_save_path, sizeof(custom_save_path));
@@ -2341,7 +2341,7 @@ short __pascal far load_game() {
 }
 
 // seg000:1F02
-void __pascal far clear_screen_and_sounds() {
+void clear_screen_and_sounds() {
 	stop_sounds();
 	current_target_surface = rect_sthg(onscreen_surface_, &screen_rect);
 
@@ -2367,7 +2367,7 @@ void __pascal far clear_screen_and_sounds() {
 }
 
 // seg000:1F7B
-void __pascal far parse_cmdline_sound() {
+void parse_cmdline_sound() {
 	// stub
 	if (check_param("stdsnd")) {
 		// Use PC Speaker sounds and music.
@@ -2380,7 +2380,7 @@ void __pascal far parse_cmdline_sound() {
 }
 
 // seg000:226D
-void __pascal far free_optional_sounds() {
+void free_optional_sounds() {
 	/* //Don't free sounds.
 	int sound_id;
 	for (sound_id = 44; sound_id < 57; ++sound_id) {
@@ -2421,13 +2421,13 @@ void load_all_sounds() {
 }
 
 // seg000:22BB
-void __pascal far free_optsnd_chtab() {
+void free_optsnd_chtab() {
 	free_optional_sounds();
 	free_all_chtabs_from(id_chtab_3_princessinstory);
 }
 
 // seg000:22C8
-void __pascal far load_title_images(int bgcolor) {
+void load_title_images(int bgcolor) {
 	dat_type* dathandle = open_dat("TITLE.DAT", 'G');
 	chtab_title40 = load_sprites_from_file(40, 1<<11, 1, -1); //Fluffy (Multiplayer): Added last argument
 	chtab_title50 = load_sprites_from_file(50, 1<<12, 1, -1); //Fluffy (Multiplayer): Added last argument
@@ -2468,7 +2468,7 @@ const word copyprot_page[] = {5, 3, 7, 3, 3, 4, 1, 5,12, 5,11,10, 1, 2, 8, 8, 2,
 #endif
 
 // seg000:23F4
-void __pascal far show_copyprot(int where) {
+void show_copyprot(int where) {
 #ifdef USE_COPYPROT
 	char sprintf_temp[140];
 	if (current_level != 15) return;
@@ -2492,7 +2492,7 @@ void __pascal far show_copyprot(int where) {
 }
 
 // seg000:2489
-void __pascal far show_loading() {
+void show_loading() {
 	show_text(&screen_rect, 0, 0, "Loading. . . .");
 	update_screen();
 }
@@ -2528,7 +2528,7 @@ char const * const tbl_quotes[2] = {
 };
 
 // seg000:249D
-void __pascal far show_quotes() {
+void show_quotes() {
 	//start_timer(timer_0,0);
 	//remove_timer(timer_0);
 	if (demo_mode && need_quotes) {
