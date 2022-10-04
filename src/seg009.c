@@ -582,7 +582,7 @@ chtab_type* load_sprites_from_file(int resource,int palette_bits, int quit_on_er
 }
 
 // seg009:11A8
-void freechtab(chtab_type *chtab_ptr) {
+void free_chtab(chtab_type *chtab_ptr) {
 	image_type* curr_image;
 	if (graphics_mode == gmMcgaVga && chtab_ptr->has_palette_bits) {
 		chtab_palette_bits &= ~ chtab_ptr->chtab_palette_bits;
@@ -955,12 +955,12 @@ surface_type* make_offscreen_buffer(const rect_type* rect) {
 }
 
 // seg009:17BD
-void freesurface(surface_type* surface) {
+void free_surface(surface_type* surface) {
 	SDL_FreeSurface(surface);
 }
 
 // seg009:17EA
-void freepeel(peel_type* peel_ptr) {
+void free_peel(peel_type* peel_ptr) {
 	SDL_FreeSurface(peel_ptr->peel);
 	free(peel_ptr);
 }
@@ -2366,7 +2366,7 @@ void play_digi_sound(sound_buffer_type* buffer) {
 	SDL_PauseAudio(0);
 }
 
-void freesound(sound_buffer_type* buffer) {
+void free_sound(sound_buffer_type* buffer) {
 	if (buffer == NULL) return;
 	if (buffer->type == sound_ogg) {
 		stb_vorbis_close(buffer->ogg.decoder);

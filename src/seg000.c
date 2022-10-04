@@ -2259,7 +2259,7 @@ void draw_full_image(enum full_image_id id) {
 		}
 		draw_image_transp(decoded_image, mask, xpos, ypos);
 		if (graphics_mode == gmCga || graphics_mode == gmHgaHerc) {
-			free_far(mask);
+			free(mask);
 		}
 		break;
 	case blitters_0_no_transp:
