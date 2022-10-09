@@ -115,7 +115,8 @@ int proc_cutscene_frame(int wait_frames) {
 			idle();
 #endif
 		} while(!has_timer_stopped(timer_0)); // busy waiting?
-	} while(--cutscene_wait_frames);
+		--cutscene_wait_frames;
+	} while(cutscene_wait_frames);
 	return 0;
 }
 
@@ -131,7 +132,8 @@ void draw_proom_drects() {
 #ifdef USE_FADE
 	if (!is_global_fading) {
 #endif
-	while (drects_count--) {
+	while (drects_count) {
+		drects_count--;
 		copy_screen_rect(&drects[drects_count]);
 	}
 #ifdef USE_FADE
