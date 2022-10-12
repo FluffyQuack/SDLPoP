@@ -2778,28 +2778,32 @@ void draw_overlay(void) {
 
 			//TODO: This code is unfinished
 			int j = 0;
-			for(int i = 0; i < NETWORK_MAXCLIENTS; i++)
+			if (Network_Intermediate_ConnectedToAnyClient())
 			{
-				char timer_text[100] = {0};
-				char *playerName = Network_Intermediate_GetPlayerName(i);
-				if(!playerName)
-					continue;
+				for (int i = 0; i < NETWORK_MAXCLIENTS; i++)
 				{
-					if (rem_min < 0) {
-						snprintf(timer_text, sizeof(timer_text), "%i: %s (%02d:%02d:%02d)",
-							j + 1, playerName, -(rem_min + 1), (719 - rem_tick) / 12, (719 - rem_tick) % 12);
-					} else {
-						snprintf(timer_text, sizeof(timer_text), "%i: %s (%02d:%02d:%02d)",
-							j + 1, playerName, rem_min - 1, rem_tick / 12, rem_tick % 12);
+					char timer_text[100] = { 0 };
+					char* playerName = Network_Intermediate_GetPlayerName(i);
+					if (!playerName)
+						continue;
+					{
+						if (rem_min < 0) {
+							snprintf(timer_text, sizeof(timer_text), "%i: %s (%02d:%02d:%02d)",
+								j + 1, playerName, -(rem_min + 1), (719 - rem_tick) / 12, (719 - rem_tick) % 12);
+						}
+						else {
+							snprintf(timer_text, sizeof(timer_text), "%i: %s (%02d:%02d:%02d)",
+								j + 1, playerName, rem_min - 1, rem_tick / 12, rem_tick % 12);
+						}
 					}
-				}
-				int line_width = (strnlen(timer_text, sizeof(timer_text))) * 7;
+					int line_width = (strnlen(timer_text, sizeof(timer_text))) * 7;
 
-				rect_type timer_box_rect = {0 + (10 * j), 0, 11 + (10 * j), line_width};
-				rect_type timer_text_rect = {2 + (10 * j), 2, 10 + (10 * j), 200};
-				draw_rect_with_alpha(&timer_box_rect, color_0_black, 128);
-				show_text_with_color(&timer_text_rect, -1, -1, timer_text, color_10_brightgreen);
-				j++;
+					rect_type timer_box_rect = { 0 + (10 * j), 0, 11 + (10 * j), line_width };
+					rect_type timer_text_rect = { 2 + (10 * j), 2, 10 + (10 * j), 200 };
+					draw_rect_with_alpha(&timer_box_rect, color_0_black, 128);
+					show_text_with_color(&timer_text_rect, -1, -1, timer_text, color_10_brightgreen);
+					j++;
+				}
 			}
 			rect_type timer_box_rect = {0, 0, 1 + (10 * j), 200};
 			drawn_rect = timer_box_rect; // Only need to blit this bit to the merged_surface.

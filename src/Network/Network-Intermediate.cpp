@@ -106,3 +106,8 @@ char *Network_Intermediate_GetPlayerName(int playerNum)
 		return networkPlayers[playerNum].name;
 	return 0;
 }
+
+bool Network_Intermediate_ConnectedToAnyClient()
+{
+	return Network_ConnectedToAnyClient();
+}
