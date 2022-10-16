@@ -1541,7 +1541,7 @@ void read_user_control() {
 		}
 	}
 	if (control_backward >= CONTROL_RELEASED) {
-		if (control_x == CONTROL_IGNORE) {
+		if (control_x == CONTROL_HELD_ALTDIRECTION) {
 			if (control_backward == CONTROL_RELEASED) {
 				control_backward = CONTROL_HELD;
 			}
@@ -1559,7 +1559,7 @@ void read_user_control() {
 		}
 	}
 	if (control_down >= CONTROL_RELEASED) {
-		if (control_y == CONTROL_IGNORE) {
+		if (control_y == CONTROL_HELD_ALTDIRECTION) {
 			if (control_down == CONTROL_RELEASED) {
 				control_down = CONTROL_HELD;
 			}
