@@ -1348,6 +1348,19 @@ typedef struct directory_listing_type directory_listing_type;
 
 #define FEATHER_FALL_LENGTH 18.75
 
+// Types of inputs for gameplay
+enum
+{
+	INPUT_LEFT,
+	INPUT_RIGHT,
+	INPUT_UP,
+	INPUT_DOWN,
+	INPUT_ACTION,
+	INPUT_UNUSED, // Represents buttons that aren't mapped to anything
+
+	INPUT_NUM
+};
+
 // Bit-flags used for the keystate array
 enum
 {
