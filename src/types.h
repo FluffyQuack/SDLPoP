@@ -1360,11 +1360,24 @@ typedef struct directory_listing_type directory_listing_type;
 
 #define FEATHER_FALL_LENGTH 18.75
 
+// Types of inputs for gameplay
+enum
+{
+	INPUT_LEFT,
+	INPUT_RIGHT,
+	INPUT_UP,
+	INPUT_DOWN,
+	INPUT_ACTION,
+	INPUT_UNUSED, // Represents buttons that aren't mapped to anything
+
+	INPUT_NUM
+};
+
 // Bit-flags used for the keystate array
 enum
 {
-	KEYSTATE_HELD = (1<<0), // True if key is currently held down
-	KEYSTATE_HELD_NEW = (1<<1), // True if key has been toggled on since last gameplay update
+	KEYSTATE_HELD = (1<<0), // Key is currently held down
+	KEYSTATE_HELD_NEW = (1<<1), // Key has been pressed since last gameplay update
 };
 
 // Enum used for input variables like control_up, control_forward, control_shift2, and etc
@@ -1375,7 +1388,6 @@ enum
 	// for control_shift, control_forward, control_backward, control_up, control_down, control_shift2:
 	CONTROL_IGNORE = 1,
 	CONTROL_HELD = -1,
-	//CONTROL_HELD_ALTDIRECTION = 1, // This is for the control_x and control_y variables to define they're being held down for the opposite direction (facing backwards for control_x and downwards for control_y)
 	// for control_x in seg000.c:
 	CONTROL_HELD_LEFT = -1,
 	CONTROL_HELD_RIGHT = 1,
