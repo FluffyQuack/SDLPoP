@@ -1239,6 +1239,7 @@ typedef struct fixes_options_type {
 	byte fix_drop_2_rooms_climbing_loose_tile;
 	byte fix_falling_through_floor_during_sword_strike;
 	byte enable_jump_grab;
+	byte fix_register_quick_input;
 } fixes_options_type;
 
 #define NUM_GUARD_SKILLS 12
@@ -1360,20 +1361,24 @@ typedef struct directory_listing_type directory_listing_type;
 
 #define FEATHER_FALL_LENGTH 18.75
 
-// Types of inputs for gameplay
+// Types of gamepad input
 enum
 {
-	INPUT_LEFT,
-	INPUT_RIGHT,
-	INPUT_UP,
-	INPUT_DOWN,
-	INPUT_ACTION,
-	INPUT_UNUSED, // Represents buttons that aren't mapped to anything
+	JOYINPUT_DPAD_LEFT,
+	JOYINPUT_DPAD_RIGHT,
+	JOYINPUT_DPAD_UP,
+	JOYINPUT_DPAD_DOWN,
+	JOYINPUT_A,
+	JOYINPUT_B,
+	JOYINPUT_X,
+	JOYINPUT_Y,
+	JOYINPUT_START,
+	JOYINPUT_BACK,
 
-	INPUT_NUM
+	JOYINPUT_NUM
 };
 
-// Bit-flags used for the keystate array
+// Bit-flags used for the key_state and joy_button_states arrays
 enum
 {
 	KEYSTATE_HELD = (1<<0), // Key is currently held down
@@ -1421,6 +1426,7 @@ enum
 #define ROOMCOUNT 24 // Max quantity of rooms for any level
 #define SCREEN_GAMEPLAY_HEIGHT 192 // Portion of the screen space dedicated to gameplay graphics
 #define TROBS_MAX 300 //Fluffy (MultiRoomRendering): We increased the max of this from 30 as we most likely need a higher maximum since we add trobs from adjacent rooms, not only the current room
+#define JOY_AXIS_NUM 6 // Max quantity of analogue inputs on a gamepad/joystick
 
 #endif
 
