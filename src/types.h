@@ -1378,6 +1378,18 @@ enum
 	JOYINPUT_NUM
 };
 
+//Fluffy (RemapControls): Types of unique input for ingame actions
+enum
+{
+	INPUT_UP,
+	INPUT_DOWN,
+	INPUT_LEFT,
+	INPUT_RIGHT,
+	INPUT_ACTION,
+
+	INPUT_NUM,
+};
+
 // Bit-flags used for the key_state and joy_button_states arrays
 enum
 {
@@ -1427,6 +1439,7 @@ enum
 #define SCREEN_GAMEPLAY_HEIGHT 192 // Portion of the screen space dedicated to gameplay graphics
 #define TROBS_MAX 300 //Fluffy (MultiRoomRendering): We increased the max of this from 30 as we most likely need a higher maximum since we add trobs from adjacent rooms, not only the current room
 #define JOY_AXIS_NUM 6 // Max quantity of analogue inputs on a gamepad/joystick
+#define INPUT_MAX_BINDINGS 6 //Fluffy (RemapControls)
 
 #endif
 

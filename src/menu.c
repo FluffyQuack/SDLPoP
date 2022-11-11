@@ -294,6 +294,7 @@ enum setting_ids {
 	SETTING_CUTSCENE,
 	SETTING_ENTRY_POSE,
 	SETTING_SEAMLESS_EXIT,
+	SETTING_REMAP_CONTROLS, //Fluffy (RemapControls)
 };
 
 typedef struct setting_type {
@@ -335,6 +336,11 @@ setting_type general_settings[] = {
 				.text = "Horizontal joystick movement only",
 				.explanation = "Use joysticks for horizontal movement only, not all-directional. "
 						"This may make the game easier to control for some controllers."},
+		
+		//Fluffy (RemapControls)
+		{.id = SETTING_REMAP_CONTROLS, .style = SETTING_STYLE_TEXT_ONLY, 
+				.text = "Re-map controls", .explanation = "Blah blah blah blah."},
+
 		{.id = SETTING_RESET_ALL_SETTINGS, .style = SETTING_STYLE_TEXT_ONLY,
 				.text = "Restore defaults...", .explanation = "Revert all settings to the default state."},
 };
@@ -1618,6 +1624,14 @@ void draw_setting(setting_type* setting, rect_type* parent, int* y_offset, int i
 				} else if (setting->id == SETTING_LEVEL_SETTINGS) {
 					play_menu_sound(sound_22_loose_shake_3);
 					current_dialog_box = DIALOG_SELECT_LEVEL;
+				} else if (setting->id == SETTING_REMAP_CONTROLS) { //Fluffy (RemapControls)
+					currently_remapping_controls = 1;
+					currently_remapping_step = 0;
+					for (int i = 0; i < INPUT_NUM; i++) {
+						for (int j = 0; j < INPUT_MAX_BINDINGS; j++) {
+							keyboard_controller_mapping_temporary[i][j] = 0;
+						}
+					}
 				}
 			}
 
@@ -1694,6 +1708,48 @@ void draw_settings_menu(void) {
 	settings_area_type* settings_area = get_settings_area(active_settings_subsection);
 	pause_menu_alpha = 0; //Fluffy (MultiRoomRendering): Set to 0 as we apply the darkening via SDL instead
 	draw_rect_with_alpha(&screen_rect, color_0_black, pause_menu_alpha);
+
+	//Fluffy (RemapControls)
+	if (currently_remapping_controls) {
+#define GAP 7
+		
+		short curY = 12;
+		{
+			char *escapeToQuit = "Press Escape to cancel remapping";
+			int line_width = (strnlen(escapeToQuit, sizeof(escapeToQuit))) * 7;
+			rect_type timer_text_rect = { curY, 2, curY + 8, 200 };
+			show_text_with_color(&timer_text_rect, -1, -1, escapeToQuit, color_15_brightwhite);
+		}
+		curY += GAP * 2;
+
+		for (int i = 0; i < INPUT_NUM; i++) {
+			char timer_text[100];
+			if (i == 0)
+				sprintf_s(timer_text, 100, "Re-map UP: %u", keyboard_controller_mapping_temporary[i][0]);
+			else if (i == 1)
+				sprintf_s(timer_text, 100, "Re-map DOWN: %u", keyboard_controller_mapping_temporary[i][0]);
+			else if (i == 2)
+				sprintf_s(timer_text, 100, "Re-map LEFT: %u", keyboard_controller_mapping_temporary[i][0]);
+			else if (i == 3)
+				sprintf_s(timer_text, 100, "Re-map RIGHT: %u", keyboard_controller_mapping_temporary[i][0]);
+			else if (i == 4)
+				sprintf_s(timer_text, 100, "Re-map ACTION: %u", keyboard_controller_mapping_temporary[i][0]);
+			int line_width = (strnlen(timer_text, sizeof(timer_text))) * 7;
+			rect_type timer_text_rect = { curY, 2, curY + 8, 200 };
+			curY += GAP;
+		}
+		curY += GAP;
+		{
+			if(currently_remapping_step == INPUT_NUM)
+			{
+				char *anyKey = "Press any key to accept remapping";
+				int line_width = (strnlen(anyKey, sizeof(anyKey))) * 7;
+				rect_type timer_text_rect = { curY + (6 * GAP), 2, curY + 8 + (6 * GAP), 200 };
+				show_text_with_color(&timer_text_rect, -1, -1, anyKey, color_15_brightwhite);
+			}
+		}
+		return;
+	}
 
 	rect_type pause_rect_outer = {0, 10, 192, 80};
 	rect_type pause_rect_inner;
@@ -1944,10 +2000,35 @@ void draw_menu() {
 	while (!need_close_menu) {
 		clear_menu_controls();
 		process_events();
-		if (process_key() != 0) {
-			break; // Menu was forcefully closed, for example by pressing Ctrl+A.
+
+		//Fluffy (RemapControls)
+		if (currently_remapping_controls && last_key_scancode != 0) {
+			last_key_scancode &= ~(WITH_SHIFT | WITH_CTRL | WITH_ALT);
+			if(last_key_scancode == SDL_SCANCODE_ESCAPE) { //Escape key cancels the remapping process
+				currently_remapping_controls = 0;
+				currently_remapping_step = 0;
+			} else {
+				if(currently_remapping_step < INPUT_NUM)
+					keyboard_controller_mapping_temporary[currently_remapping_step][0] = last_key_scancode;
+				currently_remapping_step++;
+				if(currently_remapping_step > INPUT_NUM) {
+					currently_remapping_controls = 0;
+					currently_remapping_step = 0;
+					for (int i = 0; i < INPUT_NUM; i++)	{
+						for (int j = 0; j < INPUT_MAX_BINDINGS; j++) {
+							keyboard_controller_mapping[i][j] = keyboard_controller_mapping_temporary[i][j];
+						}
+					}
+				}
+			}
+			last_key_scancode = 0;
+			have_keyboard_or_controller_input = 1;
+		} else {
+			if (process_key() != 0) {
+				break; // Menu was forcefully closed, for example by pressing Ctrl+A.
+			}
+			process_additional_menu_input();
 		}
-		process_additional_menu_input();
 
 		if (current_dialog_box != DIALOG_NONE) {
 			if (current_dialog_box == DIALOG_SELECT_LEVEL) {
