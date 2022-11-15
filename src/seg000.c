@@ -37,17 +37,6 @@ void fix_sound_priorities(void);
 
 // seg000:0000
 void pop_main() {
-	
-	//Fluffy (RemapControls): Initialize variables
-	currently_remapping_controls = 0;
-	currently_remapping_step = 0;
-	for (int i = 0; i < INPUT_NUM; i++)	{
-		for (int j = 0; j < INPUT_MAX_BINDINGS; j++) {
-			keyboard_controller_mapping[i][j] = 0;
-			keyboard_controller_mapping_temporary[i][j] = 0;
-		}
-	}
-
 	if (check_param("--version") || check_param("-v")) {
 		printf ("SDLPoP v%s\n", SDLPOP_VERSION);
 		exit(0);
@@ -1988,54 +1977,6 @@ int do_paused() {
 	return key || control_shift;
 }
 
-//Fluffy (RemapControls)
-static bool CheckKeyboardInput(int action, int key_state)
-{
-	for (int i = 0; i < INPUT_MAX_BINDINGS; i++) {
-		if (keyboard_controller_mapping[action][i] != 0 && key_states[keyboard_controller_mapping[action][i]] & key_state)
-			return 1;
-	}
-	return 0;
-
-	switch (action)
-	{
-	case INPUT_UP:
-		if (key_states[SDL_SCANCODE_UP] & key_state || key_states[SDL_SCANCODE_HOME] & key_state || key_states[SDL_SCANCODE_PAGEUP] & key_state
-			|| key_states[SDL_SCANCODE_KP_8] & key_state || key_states[SDL_SCANCODE_KP_7] & key_state || key_states[SDL_SCANCODE_KP_9] & key_state
-		) {
-			return 1;
-		}
-		break;
-	case INPUT_DOWN:
-		if (key_states[SDL_SCANCODE_CLEAR] & key_state || key_states[SDL_SCANCODE_DOWN] & key_state
-	           || key_states[SDL_SCANCODE_KP_5] & key_state || key_states[SDL_SCANCODE_KP_2] & key_state
-		) {
-			return 1;
-		}
-		break;
-	case INPUT_LEFT:
-		if (key_states[SDL_SCANCODE_LEFT] & key_state || key_states[SDL_SCANCODE_HOME] & key_state
-			|| key_states[SDL_SCANCODE_KP_4] & key_state || key_states[SDL_SCANCODE_KP_7] & key_state
-		) {
-			return 1;
-		}
-		break;
-	case INPUT_RIGHT:
-		if (key_states[SDL_SCANCODE_RIGHT] & key_state || key_states[SDL_SCANCODE_PAGEUP] & key_state
-	           || key_states[SDL_SCANCODE_KP_6] & key_state || key_states[SDL_SCANCODE_KP_9] & key_state
-		) {
-			return 1;
-		}
-		break;
-	case INPUT_ACTION:
-		if(key_states[SDL_SCANCODE_LSHIFT] & key_state || key_states[SDL_SCANCODE_RSHIFT] & key_state) {
-			return 1;
-		}
-		break;
-	}
-	return 0;
-}
-
 // seg000:1500
 void read_keyb_control() {
 	int key_state;
@@ -2045,19 +1986,26 @@ void read_keyb_control() {
 		key_state = KEYSTATE_HELD;
 	}
 
-	//Fluffy (RemapControls)
-	if (CheckKeyboardInput(INPUT_UP, key_state)) {
+	if (key_states[SDL_SCANCODE_UP] & key_state || key_states[SDL_SCANCODE_HOME] & key_state || key_states[SDL_SCANCODE_PAGEUP] & key_state
+	    || key_states[SDL_SCANCODE_KP_8] & key_state || key_states[SDL_SCANCODE_KP_7] & key_state || key_states[SDL_SCANCODE_KP_9] & key_state
+	) {
 		control_y = CONTROL_HELD_UP;
-	} else if (CheckKeyboardInput(INPUT_DOWN, key_state)) {
+	} else if (key_states[SDL_SCANCODE_CLEAR] & key_state || key_states[SDL_SCANCODE_DOWN] & key_state
+	           || key_states[SDL_SCANCODE_KP_5] & key_state || key_states[SDL_SCANCODE_KP_2] & key_state
+	) {
 		control_y = CONTROL_HELD_DOWN;
 	}
-	if (CheckKeyboardInput(INPUT_LEFT, key_state)) {
+	if (key_states[SDL_SCANCODE_LEFT] & key_state || key_states[SDL_SCANCODE_HOME] & key_state
+	    || key_states[SDL_SCANCODE_KP_4] & key_state || key_states[SDL_SCANCODE_KP_7] & key_state
+	) {
 		control_x = CONTROL_HELD_LEFT;
-	} else if (CheckKeyboardInput(INPUT_RIGHT, key_state)) {
+	} else if (key_states[SDL_SCANCODE_RIGHT] & key_state || key_states[SDL_SCANCODE_PAGEUP] & key_state
+	           || key_states[SDL_SCANCODE_KP_6] & key_state || key_states[SDL_SCANCODE_KP_9] & key_state
+	) {
 		control_x = CONTROL_HELD_RIGHT;
 	}
 	
-	if (CheckKeyboardInput(INPUT_ACTION, key_state))
+	if(key_states[SDL_SCANCODE_LSHIFT] & key_state || key_states[SDL_SCANCODE_RSHIFT] & key_state)
 		control_shift = CONTROL_HELD;
 	else
 		control_shift = CONTROL_RELEASED;

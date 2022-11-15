@@ -952,11 +952,6 @@ extern unsigned int renderPosOffsetTimerStart;
 //Fluffy (Multiplayer)
 extern int currentKidCharTable; //Current kid sprite data we're using for drawing
 
-extern bool currently_remapping_controls; //Fluffy (RemapControls)
-extern int currently_remapping_step; //Fluffy (RemapControls)
-extern int keyboard_controller_mapping[INPUT_NUM][INPUT_MAX_BINDINGS]; //Fluffy (RemapControls)
-extern int keyboard_controller_mapping_temporary[INPUT_NUM][INPUT_MAX_BINDINGS]; //Fluffy (RemapControls): Used temporarily when remapping controls
-
 #undef INIT
 #undef extern
 

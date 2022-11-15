@@ -3688,16 +3688,13 @@ void process_events() {
 					key_states[scancode] |= KEYSTATE_HELD | KEYSTATE_HELD_NEW;
 					switch (scancode) {
 						// Keys that are ignored by themselves:
-
-						//Fluffy (RemapControls): Is it okay to comment these away so that the remap code can read this input?
-						/*case SDL_SCANCODE_LCTRL:
+						case SDL_SCANCODE_LCTRL:
 						case SDL_SCANCODE_LSHIFT:
 						case SDL_SCANCODE_LALT:
+						case SDL_SCANCODE_LGUI:
 						case SDL_SCANCODE_RCTRL:
 						case SDL_SCANCODE_RSHIFT:
-						case SDL_SCANCODE_RALT:*/
-
-						case SDL_SCANCODE_LGUI:
+						case SDL_SCANCODE_RALT:
 						case SDL_SCANCODE_RGUI:
 						case SDL_SCANCODE_CAPSLOCK:
 						case SDL_SCANCODE_SCROLLLOCK:
