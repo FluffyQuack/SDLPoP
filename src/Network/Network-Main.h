@@ -1,5 +1,10 @@
 #pragma once
 
+//These 3 headers are necessary when including our network code, so we make sure they're always included this way
+#include "../Libs/slikenet/Include/types.h"
+#include "../Libs/slikenet/Include/PacketPriority.h"
+#include "../Libs/slikenet/Include/Bitstream.h"
+
 enum
 {
 	PLAYERID_VALID = 0,
