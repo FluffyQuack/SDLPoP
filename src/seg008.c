@@ -2001,12 +2001,6 @@ void erase_bottom_text(int arg_0) {
 #define WALL_MODIFIER_WWS     2
 #define WALL_MODIFIER_WWW     3
 
-extern rgb_type palette[256];
-bool writtenPal = 0;
-int lowestColor = -1;
-int highestColor = -1;
-bool usedColors[256];
-bool initUsedColors = 0;
 
 // seg008:268F
 void wall_pattern(int which_part,int which_table) {
@@ -2024,68 +2018,11 @@ void wall_pattern(int which_part,int which_table) {
 	// set the new seed
 	random_seed = drawn_room + tbl_line[drawn_row] + drawn_col;
 	prandom(1); // fetch a random number and discard it
-
-	if(!initUsedColors)
-	{
-		for(int i = 0; i < 256; i++)
-			usedColors[i] = 0;
-		initUsedColors = 1;
-	}
-
 	word is_dungeon = (custom->tbl_level_type[current_level] < DESIGN_PALACE) || custom->enable_wda_in_palace;
 	if ( (!is_dungeon) && (graphics_mode== GRAPHICS_VGA) ) {
 		// I haven't traced the palace WDA
 		//[...]
 		if (which_part) {
-
-			if(!writtenPal && 0)
-			{
-				FILE *file;
-				fopen_s(&file, "palace.pal", "wb");
-				fwrite(&palette, sizeof(rgb_type), 256, file);
-				fclose(file);
-				writtenPal = 1;
-			}
-
-			unsigned char colour1 = 44 * drawn_row +      drawn_col;
-			unsigned char colour2 = 44 * drawn_row + 11 + drawn_col;
-			unsigned char colour3 = 44 * drawn_row + 12 + drawn_col;
-			unsigned char colour4 = 44 * drawn_row + 22 + drawn_col;
-			unsigned char colour5 = 44 * drawn_row + 23 + drawn_col;
-
-			if(lowestColor == -1)
-				lowestColor = 44 * drawn_row + drawn_col;
-			if(highestColor == -1)
-				highestColor = 44 * drawn_row + drawn_col;
-
-			if(colour1 < lowestColor)
-				lowestColor = colour1;
-			if(colour2 < lowestColor)
-				lowestColor = colour2;
-			if(colour3 < lowestColor)
-				lowestColor = colour3;
-			if(colour4 < lowestColor)
-				lowestColor = colour4;
-			if(colour5 < lowestColor)
-				lowestColor = colour5;
-
-			if(colour1 > highestColor)
-				highestColor = colour1;
-			if(colour2 > highestColor)
-				highestColor = colour2;
-			if(colour3 > highestColor)
-				highestColor = colour3;
-			if(colour4 > highestColor)
-				highestColor = colour4;
-			if(colour5 > highestColor)
-				highestColor = colour5;
-
-			usedColors[colour1] = 1;
-			usedColors[colour2] = 1;
-			usedColors[colour3] = 1;
-			usedColors[colour4] = 1;
-			usedColors[colour5] = 1;
-
 			// Draw solid colours for the bricks
 			add_wipetable(which_table, 8*(draw_xh)    , draw_main_y - 40, 20, 4*8, palace_wall_colors[44 * drawn_row +      drawn_col]);
 			add_wipetable(which_table, 8*(draw_xh)    , draw_main_y - 19, 21, 2*8, palace_wall_colors[44 * drawn_row + 11 + drawn_col]);
