@@ -1699,6 +1699,14 @@ void draw_kid() {
 
 		if (Kid.room != 0 && Kid.room == drawn_room && remote_current_level == current_level) {
 			add_kid_to_objtable();
+			
+			//Fluffy (DrawCollision)
+			kidYPos = obj_y;
+			image_type* img = get_image(obj_chtab, obj_id);
+			kidYSize = img->h;
+			kidColX1 = char_x_left_coll;
+			kidColX2 = char_x_right_coll;
+
 			if (hitp_delta < 0) {
 				draw_hurt_splash();
 			}
@@ -1719,6 +1727,14 @@ void draw_kid() {
 void draw_guard() {
 	if (Guard.direction != dir_56_none && Guard.room == drawn_room) {
 		add_guard_to_objtable();
+
+		//Fluffy (DrawCollision)
+		guardYPos = obj_y;
+		image_type* img = get_image(obj_chtab, obj_id);
+		guardYSize = img->h;
+		guardColX1 = char_x_left_coll;
+		guardColX2 = char_x_right_coll;
+
 		if (guardhp_delta < 0) {
 			draw_hurt_splash();
 		}

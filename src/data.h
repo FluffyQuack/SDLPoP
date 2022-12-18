@@ -952,6 +952,20 @@ extern unsigned int renderPosOffsetTimerStart;
 //Fluffy (Multiplayer)
 extern int currentKidCharTable; //Current kid sprite data we're using for drawing
 
+//Fluffy (DrawCollision)
+extern int kidYPos;
+extern int kidYSize;
+extern int kidColX1;
+extern int kidColX2;
+extern int kidSwordYPos;
+extern int kidSwordYSize;
+extern int kidSwordColX1;
+extern int kidSwordColX2;
+extern int guardYPos;
+extern int guardYSize;
+extern int guardColX1;
+extern int guardColX2;
+
 #undef INIT
 #undef extern
 

@@ -2985,10 +2985,66 @@ static RenderGameTextures(int targetX, int targetY, int presentY, bool correctAs
 	}
 }
 
+//Fluffy (DrawCollision)
+static void DrawRectangleStroke(unsigned char *data, int x1, int y1, int x2, int y2, unsigned char r, unsigned char g, unsigned char b)
+{
+	if(x1 < 0 || y1 < 0 || x2 < 0 || y2 < 0 || x2 < x1 || y2 < y1 || x1 >= 320 || x2 >= 320 || y1 >= 200 || y2 >= 200)
+		return;
+
+	int stride = (320 * 3);
+
+	//Top and bottom rows
+	unsigned char *top = &data[(y1 * stride) + (x1 * 3)];
+	unsigned char *bottom = &data[(y2 * stride) + (x1 * 3)];
+	for(int x = x1; x <= x2; x++, top += 3, bottom += 3)
+	{
+		top[0] = r;
+		top[1] = g;
+		top[2] = b;
+		bottom[0] = r;
+		bottom[1] = g;
+		bottom[2] = b;
+	}
+
+	//Left and right columns
+	unsigned char *left = &data[(y1 * stride) + (x1 * 3)];
+	unsigned char *right = &data[(y1 * stride) + (x2 * 3)];
+	for(int y = y1; y <= y2; y++, left += stride, right += stride)
+	{
+		left[0] = r;
+		left[1] = g;
+		left[2] = b;
+		right[0] = r;
+		right[1] = g;
+		right[2] = b;
+	}
+}
+
+//Fluffy (DrawCollision)
+static void DrawRectangleStroke_Intermediate(SDL_Surface *surface, short objxLeft, short objxRight, int obj_y, int height, unsigned char r, unsigned char g, unsigned char b)
+{
+	//Convert to screen space coordinates
+	short obj_x_left = (((int) (objxLeft)) << 1) - 116;
+	short obj_x_right = (((int) (objxRight)) << 1) - 116;
+		
+	//Convert from Apple II screen space to DOS screen space coordinates
+	short xpos_left = (short) obj_x_left *320/280;
+	short xpos_right = (short) obj_x_right *320/280;
+		
+	DrawRectangleStroke(surface->pixels, xpos_left, obj_y - height, xpos_right, obj_y, r, g, b);
+}
+
 void update_screen() {
 	draw_overlay();
 	//SDL_Surface* surface = get_final_surface(); //Fluffy (MultiRoomRendering): Commented this out as we always want to use the surface with ingame graphics
 	SDL_Surface *surface = onscreen_surface_; //Fluffy (MultiRoomRendering)
+
+	//Fluffy (DrawCollision)
+	{
+		DrawRectangleStroke_Intermediate(surface, kidColX1, kidColX2, kidYPos, kidYSize, 255, 255, 255);
+		DrawRectangleStroke_Intermediate(surface, guardColX1, guardColX2, guardYPos, guardYSize, 0, 255, 255);
+	}
+
 	init_scaling();
 	//if (scaling_type == 1) {
 	//	// Make "fuzzy pixels" like DOSBox does:
