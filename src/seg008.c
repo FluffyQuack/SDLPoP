@@ -1703,9 +1703,11 @@ void draw_kid() {
 			//Fluffy (DrawCollision)
 			kidYPos = obj_y;
 			image_type* img = get_image(obj_chtab, obj_id);
-			kidYSize = img->h;
+			kidYSize = img->h - 1;
 			kidColX1 = char_x_left_coll;
 			kidColX2 = char_x_right_coll;
+			kidTileX = Char.curr_col;
+			kidTileY = Char.curr_row;
 
 			if (hitp_delta < 0) {
 				draw_hurt_splash();
@@ -1747,6 +1749,11 @@ void add_kid_to_objtable() {
 	//printf("add_kid_to_objtable\n");
 	loadkid();
 	load_fram_det_col();
+
+	//Fluffy (DrawCollision)
+	kidFootX = dx_weight();
+	kidY = Char.y;
+
 	load_frame_to_obj();
 	stuck_lower();
 	set_char_collision();

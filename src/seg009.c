@@ -2988,6 +2988,10 @@ static RenderGameTextures(int targetX, int targetY, int presentY, bool correctAs
 //Fluffy (DrawCollision)
 static void DrawRectangleStroke(unsigned char *data, int x1, int y1, int x2, int y2, unsigned char r, unsigned char g, unsigned char b)
 {
+	if(x1 < 0)
+		x1 = 0;
+	if(y1 < 0)
+		y1 = 0;
 	if(x1 < 0 || y1 < 0 || x2 < 0 || y2 < 0 || x2 < x1 || y2 < y1 || x1 >= 320 || x2 >= 320 || y1 >= 200 || y2 >= 200)
 		return;
 
@@ -3041,8 +3045,36 @@ void update_screen() {
 
 	//Fluffy (DrawCollision)
 	{
-		DrawRectangleStroke_Intermediate(surface, kidColX1, kidColX2, kidYPos, kidYSize, 255, 255, 255);
-		DrawRectangleStroke_Intermediate(surface, guardColX1, guardColX2, guardYPos, guardYSize, 0, 255, 255);
+		//Draw vertical lines representing wall collision
+		{
+			int x1 = (kidTileX * 32) + 16;
+			DrawRectangleStroke(surface->pixels, x1, 0, x1, 199, 255, 255, 0);
+			x1 += 32;
+			DrawRectangleStroke(surface->pixels, x1, 0, x1, 199, 255, 255, 0);
+		}
+
+		DrawRectangleStroke_Intermediate(surface, kidColX1, kidColX2, kidYPos, kidYSize, 255, 255, 255); //Kid collision box
+		DrawRectangleStroke_Intermediate(surface, kidFootX, kidFootX, kidYPos + 5, 1, 255, 0, 255); //Kid "weight" position
+		{
+			int x1 = (kidTileX * 32) + 16;
+			int y1 = ((kidTileY * 63) + 3) - 8;
+			DrawRectangleStroke(surface->pixels, x1, y1 + 63, x1 + 31, y1 + 63, 255, 0, 255); //Kid's current tile, this should correspond to collision of current floor
+		}
+		DrawRectangleStroke_Intermediate(surface, guardColX1, guardColX2, guardYPos, guardYSize, 0, 255, 255); //Guard collision box
+
+		//Draw debug text with player positions
+		rect_type rect;
+		rect.top = 0;
+		rect.bottom = 9;
+		rect.left = 200;
+		rect.right = 320;
+		char text[50];
+		sprintf(text, "KidX: %i", kidFootX);
+		draw_text(&rect, 0, 0, text, strlen(text));
+		sprintf(text, "KidY: %i", kidY);
+		rect.top += 10;
+		rect.bottom += 10;
+		draw_text(&rect, 0, 0, text, strlen(text));
 	}
 
 	init_scaling();
