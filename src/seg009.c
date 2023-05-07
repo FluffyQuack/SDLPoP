@@ -3045,21 +3045,28 @@ void update_screen() {
 
 	//Fluffy (DrawCollision)
 	{
-		//Draw vertical lines representing wall collision
+		//Draw vertical lines representing wall collision (vertical size is arbitrary)
+		//TODO: We should double check and make sure this does truly correspond to the exact collision point of walls
+		//TOOD: Should we also render the x_bump positions?
 		{
 			int x1 = (kidTileX * 32) + 16;
-			DrawRectangleStroke(surface->pixels, x1, 0, x1, 199, 255, 255, 0);
+			int y1 = y_land[kidTileY] + (63 / 3);
+			int y2 = y1 + (63 / 2);
+			DrawRectangleStroke(surface->pixels, x1, y1, x1, y2, 200, 200, 0);
 			x1 += 32;
-			DrawRectangleStroke(surface->pixels, x1, 0, x1, 199, 255, 255, 0);
+			DrawRectangleStroke(surface->pixels, x1, y1, x1, y2, 200, 200, 0);
+		}
+
+		//Floor collision
+		{
+			int x1 = (kidTileX * 32) + 16;
+			int y1 = y_land[kidTileY + 1];
+			DrawRectangleStroke(surface->pixels, x1, y1, x1 + 31, y1, 150, 150, 0); //Kid's current tile, this should correspond to collision of current floor though it is offset vertically by a few pixels to show the player collision box more clearly
 		}
 
 		DrawRectangleStroke_Intermediate(surface, kidColX1, kidColX2, kidYPos, kidYSize, 255, 255, 255); //Kid collision box
-		DrawRectangleStroke_Intermediate(surface, kidFootX, kidFootX, kidYPos + 5, 1, 255, 0, 255); //Kid "weight" position
-		{
-			int x1 = (kidTileX * 32) + 16;
-			int y1 = ((kidTileY * 63) + 3) - 8;
-			DrawRectangleStroke(surface->pixels, x1, y1 + 63, x1 + 31, y1 + 63, 255, 0, 255); //Kid's current tile, this should correspond to collision of current floor
-		}
+		DrawRectangleStroke_Intermediate(surface, kidFootX, kidFootX, kidYPos + 2, 1, 255, 255, 255); //Kid "weight" position
+
 		DrawRectangleStroke_Intermediate(surface, guardColX1, guardColX2, guardYPos, guardYSize, 0, 255, 255); //Guard collision box
 
 		//Draw debug text with player positions
