@@ -2986,7 +2986,7 @@ static RenderGameTextures(int targetX, int targetY, int presentY, bool correctAs
 }
 
 //Fluffy (DrawCollision)
-static void DrawRectangleStroke(unsigned char *data, int x1, int y1, int x2, int y2, unsigned char r, unsigned char g, unsigned char b)
+static void DrawRectangleStroke(unsigned char *data, int x1, int y1, int x2, int y2, unsigned char r, unsigned char g, unsigned char b, float alpha)
 {
 	if(x1 < 0)
 		x1 = 0;
@@ -3002,12 +3002,24 @@ static void DrawRectangleStroke(unsigned char *data, int x1, int y1, int x2, int
 	unsigned char *bottom = &data[(y2 * stride) + (x1 * 3)];
 	for(int x = x1; x <= x2; x++, top += 3, bottom += 3)
 	{
-		top[0] = r;
-		top[1] = g;
-		top[2] = b;
-		bottom[0] = r;
-		bottom[1] = g;
-		bottom[2] = b;
+		if(alpha >= 1.0f)
+		{
+			top[0] = r;
+			top[1] = g;
+			top[2] = b;
+			bottom[0] = r;
+			bottom[1] = g;
+			bottom[2] = b;
+		}
+		else
+		{
+			top[0] = (top[0] * (1.0f - alpha)) + (r * alpha);
+			top[1] = (top[1] * (1.0f - alpha)) + (r * alpha);
+			top[2] = (top[2] * (1.0f - alpha)) + (r * alpha);
+			bottom[0] = (bottom[0] * (1.0f - alpha)) + (r * alpha);
+			bottom[1] = (bottom[1] * (1.0f - alpha)) + (r * alpha);
+			bottom[2] = (bottom[2] * (1.0f - alpha)) + (r * alpha);
+		}
 	}
 
 	//Left and right columns
@@ -3015,17 +3027,29 @@ static void DrawRectangleStroke(unsigned char *data, int x1, int y1, int x2, int
 	unsigned char *right = &data[(y1 * stride) + (x2 * 3)];
 	for(int y = y1; y <= y2; y++, left += stride, right += stride)
 	{
-		left[0] = r;
-		left[1] = g;
-		left[2] = b;
-		right[0] = r;
-		right[1] = g;
-		right[2] = b;
+		if(alpha >= 1.0f)
+		{
+			left[0] = r;
+			left[1] = g;
+			left[2] = b;
+			right[0] = r;
+			right[1] = g;
+			right[2] = b;
+		}
+		else
+		{
+			left[0] = (left[0] * (1.0f - alpha)) + (r * alpha);
+			left[1] = (left[1] * (1.0f - alpha)) + (r * alpha);
+			left[2] = (left[2] * (1.0f - alpha)) + (r * alpha);
+			right[0] = (right[0] * (1.0f - alpha)) + (r * alpha);
+			right[1] = (right[1] * (1.0f - alpha)) + (r * alpha);
+			right[2] = (right[2] * (1.0f - alpha)) + (r * alpha);
+		}
 	}
 }
 
 //Fluffy (DrawCollision)
-static void DrawRectangleStroke_Intermediate(SDL_Surface *surface, short objxLeft, short objxRight, int obj_y, int height, unsigned char r, unsigned char g, unsigned char b)
+static void DrawRectangleStroke_Intermediate(SDL_Surface *surface, short objxLeft, short objxRight, int obj_y, int height, unsigned char r, unsigned char g, unsigned char b, float alpha)
 {
 	//Convert to screen space coordinates
 	short obj_x_left = (((int) (objxLeft)) << 1) - 116;
@@ -3035,7 +3059,7 @@ static void DrawRectangleStroke_Intermediate(SDL_Surface *surface, short objxLef
 	short xpos_left = (short) obj_x_left *320/280;
 	short xpos_right = (short) obj_x_right *320/280;
 		
-	DrawRectangleStroke(surface->pixels, xpos_left, obj_y - height, xpos_right, obj_y, r, g, b);
+	DrawRectangleStroke(surface->pixels, xpos_left, obj_y - height, xpos_right, obj_y, r, g, b, alpha);
 }
 
 void update_screen() {
@@ -3052,22 +3076,22 @@ void update_screen() {
 			int x1 = (kidTileX * 32) + 16;
 			int y1 = y_land[kidTileY] + (63 / 3);
 			int y2 = y1 + (63 / 2);
-			DrawRectangleStroke(surface->pixels, x1, y1, x1, y2, 200, 200, 0);
+			DrawRectangleStroke(surface->pixels, x1, y1, x1, y2, 200, 200, 0, 1.0f);
 			x1 += 32;
-			DrawRectangleStroke(surface->pixels, x1, y1, x1, y2, 200, 200, 0);
+			DrawRectangleStroke(surface->pixels, x1, y1, x1, y2, 200, 200, 0, 1.0f);
 		}
 
 		//Floor collision
 		{
 			int x1 = (kidTileX * 32) + 16;
 			int y1 = y_land[kidTileY + 1];
-			DrawRectangleStroke(surface->pixels, x1, y1, x1 + 31, y1, 150, 150, 0); //Kid's current tile, this should correspond to collision of current floor though it is offset vertically by a few pixels to show the player collision box more clearly
+			DrawRectangleStroke(surface->pixels, x1, y1, x1 + 31, y1, 150, 150, 0, 1.0f); //Kid's current tile, this should correspond to collision of current floor though it is offset vertically by a few pixels to show the player collision box more clearly
 		}
 
-		DrawRectangleStroke_Intermediate(surface, kidColX1, kidColX2, kidYPos, kidYSize, 255, 255, 255); //Kid collision box
-		DrawRectangleStroke_Intermediate(surface, kidFootX, kidFootX, kidYPos + 2, 1, 255, 255, 255); //Kid "weight" position
+		DrawRectangleStroke_Intermediate(surface, kidColX1, kidColX2, kidYPos, kidYSize, 255, 255, 255, 0.5f); //Kid collision box
+		DrawRectangleStroke_Intermediate(surface, kidFootX, kidFootX, kidYPos + 2, 1, 255, 255, 255, 0.5f); //Kid "weight" position
 
-		DrawRectangleStroke_Intermediate(surface, guardColX1, guardColX2, guardYPos, guardYSize, 0, 255, 255); //Guard collision box
+		DrawRectangleStroke_Intermediate(surface, guardColX1, guardColX2, guardYPos, guardYSize, 0, 255, 255, 0.5f); //Guard collision box
 
 		//Draw debug text with player positions
 		rect_type rect;
