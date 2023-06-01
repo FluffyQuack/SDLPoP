@@ -2988,11 +2988,25 @@ static RenderGameTextures(int targetX, int targetY, int presentY, bool correctAs
 //Fluffy (DrawCollision)
 static void DrawRectangleStroke(unsigned char *data, int x1, int y1, int x2, int y2, unsigned char r, unsigned char g, unsigned char b, float alpha)
 {
+	if((x1 < 0 && x2 < 0) || (x1 >= 320 && x2 >= 320) || (y1 < 0 && y2 < 0) || (y1 >= 200 && y2 >= 200))
+		return;
 	if(x1 < 0)
 		x1 = 0;
+	if(x2 < 0)
+		x2 = 0;
 	if(y1 < 0)
 		y1 = 0;
-	if(x1 < 0 || y1 < 0 || x2 < 0 || y2 < 0 || x2 < x1 || y2 < y1 || x1 >= 320 || x2 >= 320 || y1 >= 200 || y2 >= 200)
+	if(y2 < 0)
+		y2 = 0;
+	if(x1 >= 320)
+		x1 = 319;
+	if(x2 >= 320)
+		x2 = 319;
+	if(y1 >= 200)
+		y1 = 199;
+	if(y2 >= 200)
+		y2 = 199;
+	if(x2 < x1 || y2 < y1)
 		return;
 
 	int stride = (320 * 3);
@@ -3072,21 +3086,83 @@ void update_screen() {
 		//Draw vertical lines representing wall collision (vertical size is arbitrary)
 		//TODO: We should double check and make sure this does truly correspond to the exact collision point of walls
 		//TOOD: Should we also render the x_bump positions?
+
+		if(1) //Draw collision for every wall in floor in the current room
 		{
-			int x1 = (kidTileX * 32) + 16;
-			int y1 = y_land[kidTileY] + (63 / 3);
-			int y2 = y1 + (63 / 2);
-			DrawRectangleStroke(surface->pixels, x1, y1, x1, y2, 200, 200, 0, 1.0f);
-			x1 += 32;
-			DrawRectangleStroke(surface->pixels, x1, y1, x1, y2, 200, 200, 0, 1.0f);
+			//Draw collision for the right-most column for the room to the left
+			for(int y = 0; y < 3; y++)
+			{
+				int tileType = leftroom_[y].tiletype;
+				int rightTileType = get_tile(loaded_room, 0, y);
+
+				if(tileType != tiles_0_empty && tileType != tiles_9_bigpillar_top && tileType != tiles_20_wall) //Floor
+				{
+					int x1 = (9 * 32) + 16;
+					x1 -= 10 * 32;
+					int y1 = y_land[y + 1];
+					DrawRectangleStroke(surface->pixels, x1, y1, x1 + 31, y1, 150, 150, 0, 1.0f);
+				}
+				else if(tileType == tiles_20_wall && rightTileType != tiles_20_wall) //Wall
+				{
+					int x1 = (9 * 32) + 16;
+					x1 -= 10 * 32;
+					int y1 = y_land[y] + 1/* + (63 / 3)*/;
+					int y2 = y1 + 61/* + (63 / 2)*/;
+					//DrawRectangleStroke(surface->pixels, x1, y1, x1, y2, 200, 200, 0, 1.0f); //Skip left line for wall
+					x1 += 32;
+					DrawRectangleStroke(surface->pixels, x1, y1, x1, y2, 200, 200, 0, 1.0f);
+				}
+			}
+
+			for(int x = 0; x < 10; x++)
+				for(int y = 0; y < 3; y++)
+				{
+					int tileType = get_tile(loaded_room, x, y);
+					int rightTileType = tiles_20_wall, leftTileType = tiles_20_wall;
+					if(x <= 9) rightTileType = get_tile(loaded_room, x + 1, y);
+					if(x == 0) leftTileType = leftroom_[y].tiletype;
+					else leftTileType = get_tile(loaded_room, x - 1, y);
+
+					if(tileType != tiles_0_empty && tileType != tiles_9_bigpillar_top && tileType != tiles_20_wall) //Floor
+					{
+						int x1 = (x * 32) + 16;
+						int y1 = y_land[y + 1];
+						DrawRectangleStroke(surface->pixels, x1, y1, x1 + 31, y1, 150, 150, 0, 1.0f);
+					}
+					else if(tileType == tiles_20_wall) //Wall
+					{
+						int x1 = (x * 32) + 16;
+						int y1 = y_land[y] + 1/* + (63 / 3)*/;
+						int y2 = y1 + 61/* + (63 / 2)*/;
+						if(leftTileType != tiles_20_wall)
+							DrawRectangleStroke(surface->pixels, x1, y1, x1, y2, 200, 200, 0, 1.0f);
+						x1 += 32;
+						if(rightTileType != tiles_20_wall)
+							DrawRectangleStroke(surface->pixels, x1, y1, x1, y2, 200, 200, 0, 1.0f);
+					}
+				}
+		}
+		else
+		{
+			//Draw wall collision for current tile
+			{
+				int x1 = (kidTileX * 32) + 16;
+				int y1 = y_land[kidTileY] + (63 / 3);
+				int y2 = y1 + (63 / 2);
+				DrawRectangleStroke(surface->pixels, x1, y1, x1, y2, 200, 200, 0, 1.0f);
+				x1 += 32;
+				DrawRectangleStroke(surface->pixels, x1, y1, x1, y2, 200, 200, 0, 1.0f);
+			}
+
+			//Floor collision for current tile
+			{
+				int x1 = (kidTileX * 32) + 16;
+				int y1 = y_land[kidTileY + 1];
+				DrawRectangleStroke(surface->pixels, x1, y1, x1 + 31, y1, 150, 150, 0, 1.0f);
+			}
 		}
 
-		//Floor collision
-		{
-			int x1 = (kidTileX * 32) + 16;
-			int y1 = y_land[kidTileY + 1];
-			DrawRectangleStroke(surface->pixels, x1, y1, x1 + 31, y1, 150, 150, 0, 1.0f); //Kid's current tile, this should correspond to collision of current floor though it is offset vertically by a few pixels to show the player collision box more clearly
-		}
+		
 
 		DrawRectangleStroke_Intermediate(surface, kidColX1, kidColX2, kidYPos, kidYSize, 255, 255, 255, 0.5f); //Kid collision box
 		DrawRectangleStroke_Intermediate(surface, kidFootX, kidFootX, kidYPos + 2, 1, 255, 255, 255, 0.5f); //Kid "weight" position
