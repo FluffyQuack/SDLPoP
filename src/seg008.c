@@ -1742,6 +1742,13 @@ void draw_guard() {
 		}
 		add_sword_to_objtable();
 	}
+	else //Fluffy (DrawCollision)
+	{
+		guardColX1 = 0;
+		guardColX2 = 0;
+		guardYPos = 0;
+		guardYSize = 0;
+	}
 }
 
 // seg008:22F0

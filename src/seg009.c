@@ -3091,7 +3091,8 @@ void update_screen() {
 		DrawRectangleStroke_Intermediate(surface, kidColX1, kidColX2, kidYPos, kidYSize, 255, 255, 255, 0.5f); //Kid collision box
 		DrawRectangleStroke_Intermediate(surface, kidFootX, kidFootX, kidYPos + 2, 1, 255, 255, 255, 0.5f); //Kid "weight" position
 
-		DrawRectangleStroke_Intermediate(surface, guardColX1, guardColX2, guardYPos, guardYSize, 0, 255, 255, 0.5f); //Guard collision box
+		if(guardYSize)
+			DrawRectangleStroke_Intermediate(surface, guardColX1, guardColX2, guardYPos, guardYSize, 128, 255, 255, 0.5f); //Guard collision box
 
 		//Draw debug text with player positions
 		rect_type rect;
