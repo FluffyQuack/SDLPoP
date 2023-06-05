@@ -1759,7 +1759,10 @@ void add_kid_to_objtable() {
 
 	//Fluffy (DrawCollision)
 	kidFootX = dx_weight();
+	kidX = Char.x;
 	kidY = Char.y;
+	kidCol = Char.curr_col;
+	kidRow = Char.curr_row;
 
 	load_frame_to_obj();
 	stuck_lower();

@@ -3170,19 +3170,29 @@ void update_screen() {
 		if(guardYSize)
 			DrawRectangleStroke_Intermediate(surface, guardColX1, guardColX2, guardYPos, guardYSize, 128, 255, 255, 0.5f); //Guard collision box
 
-		//Draw debug text with player positions
+		//Draw debug text with player position
 		rect_type rect;
 		rect.top = 0;
 		rect.bottom = 9;
 		rect.left = 200;
 		rect.right = 320;
 		char text[50];
-		sprintf(text, "KidX: %i", kidFootX);
-		draw_text(&rect, 0, 0, text, strlen(text));
-		sprintf(text, "KidY: %i", kidY);
-		rect.top += 10;
-		rect.bottom += 10;
-		draw_text(&rect, 0, 0, text, strlen(text));
+		for(int i = 0; i < 5; i++)
+		{
+			if(i == 0)
+				sprintf(text, "KidWeightX: %i", kidFootX);
+			else if(i == 1)
+				sprintf(text, "KidX: %i", kidX);
+			else if(i == 2)
+				sprintf(text, "KidY: %i", kidY);
+			else if(i == 3)
+				sprintf(text, "KidCol: %i", kidCol);
+			else if(i == 4)
+				sprintf(text, "KidRow: %i", kidRow);
+			draw_text(&rect, 0, 0, text, strlen(text));
+			rect.top += 10;
+			rect.bottom += 10;
+		}
 	}
 
 	init_scaling();
