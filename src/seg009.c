@@ -3162,8 +3162,6 @@ void update_screen() {
 			}
 		}
 
-		
-
 		DrawRectangleStroke_Intermediate(surface, kidColX1, kidColX2, kidYPos, kidYSize, 255, 255, 255, 0.5f); //Kid collision box
 		DrawRectangleStroke_Intermediate(surface, kidFootX, kidFootX, kidYPos + 2, 1, 255, 255, 255, 0.5f); //Kid "weight" position
 
@@ -3182,13 +3180,13 @@ void update_screen() {
 			if(i == 0)
 				sprintf(text, "KidWeightX: %i", kidFootX);
 			else if(i == 1)
-				sprintf(text, "KidX: %i", kidX);
+				sprintf(text, "KidXY: %i,%i", kidX, kidY);
 			else if(i == 2)
-				sprintf(text, "KidY: %i", kidY);
+				sprintf(text, "KidColRow: %i,%i", kidCol, kidRow);
 			else if(i == 3)
-				sprintf(text, "KidCol: %i", kidCol);
+				sprintf(text, "kidCollX: %i,%i", kidColX1, kidColX2);
 			else if(i == 4)
-				sprintf(text, "KidRow: %i", kidRow);
+				sprintf(text, "kidYCollTop: %i", kidYColTop);
 			draw_text(&rect, 0, 0, text, strlen(text));
 			rect.top += 10;
 			rect.bottom += 10;
