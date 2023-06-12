@@ -950,7 +950,7 @@ void swordfight() {
 	short frame = Char.frame;
 	short charid = Char.charid;
 	// frame 161: parry
-	if (frame == frame_161_parry && control_shift2 >= 0) {
+	if (frame == frame_161_parry && control_shift2 >= CONTROL_RELEASED) {
 		seqtbl_offset_char(seq_57_back_with_sword); // back with sword (when parrying)
 		return;
 	} else if (control_shift2 == CONTROL_HELD) {
