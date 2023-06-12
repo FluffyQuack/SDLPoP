@@ -148,7 +148,7 @@ void land() {
 		start_chompers();
 	} else {
 		// fell on spikes
-		goto loc_5EE6;
+		goto fell_on_spikes;
 	}
 	if (Char.alive < 0) {
 		// alive
@@ -157,7 +157,7 @@ void land() {
 			get_tile_at_char() == tiles_2_spike
 		) {
 			// fell on spikes
-			loc_5EE6:
+			fell_on_spikes:
 			if (is_spike_harmful()) {
 				spiked();
 				return;
@@ -173,7 +173,7 @@ void land() {
 		{
 			if (Char.fall_y < 22) {
 				// fell 1 row
-				loc_5EFD:
+				one_row_fall:
 				if (Char.charid >= charid_2_guard || Char.sword == sword_2_drawn) {
 					Char.sword = sword_2_drawn;
 					seq_id = seq_63_guard_stand_active; // stand active after landing
@@ -186,8 +186,8 @@ void land() {
 				}
 			} else if (Char.fall_y < 33) {
 				// fell 2 rows
-				if (Char.charid == charid_1_shadow) goto loc_5EFD;
-				if (Char.charid == charid_2_guard) goto loc_5F6C;
+				if (Char.charid == charid_1_shadow) goto one_row_fall; // shadow uses the logic for 1-row-fall when falling 2 rows
+				if (Char.charid == charid_2_guard) goto dead_lose_all_health; // guards die when falling 2 rows
 				// kid (or skeleton (bug!))
 				if (! take_hp(1)) {
 					// still alive
@@ -196,18 +196,18 @@ void land() {
 					seq_id = seq_20_medium_land; // medium land (lose 1 HP, crouch)
 				} else {
 					// dead (this was the last HP)
-					goto loc_5F75;
+					goto dead;
 				}
 			} else {
 				// fell 3 or more rows
-				goto loc_5F6C;
+				goto dead_lose_all_health;
 			}
 		}
 	} else {
 		// dead
-		loc_5F6C:
+		dead_lose_all_health:
 		take_hp(100);
-		loc_5F75:
+		dead:
 		play_sound(sound_0_fell_to_death); // prince crashing into the floor
 		seq_id = seq_22_crushed; // dead (after falling)
 	}
@@ -349,7 +349,7 @@ void control_standing() {
 		return;
 	} //else
 	if (have_sword) {
-		if (offguard != 0 && control_shift >= CONTROL_RELEASED) goto loc_6213;
+		if (offguard != 0 && control_shift >= CONTROL_RELEASED) goto guard_down;
 		if (can_guard_see_kid >= 2) {
 			short distance = char_opp_dist();
 			if (distance >= -10 && distance < 90) {
@@ -382,7 +382,7 @@ void control_standing() {
 		} else if (control_x == CONTROL_HELD_FORWARD && control_forward == CONTROL_HELD) {
 			safe_step();
 		}
-	} else loc_6213: if (control_forward == CONTROL_HELD) {
+	} else guard_down: if (control_forward == CONTROL_HELD) {
 		if (is_keyboard_mode && control_up == CONTROL_HELD) {
 			standing_jump();
 		} else {
