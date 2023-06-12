@@ -558,7 +558,7 @@ void safe_step() {
 	short distance = get_edge_distance();
 	if (distance) {
 		Char.repeat = 1;
-		seqtbl_offset_char(distance + 28); // 29..42: safe step to edge
+		seqtbl_offset_char(distance + (seq_29_safe_step_1 - 1)); // 29..42: safe step to edge
 	} else if (edge_type != EDGE_TYPE_EDGE && Char.repeat != 0) {
 		Char.repeat = 0;
 		seqtbl_offset_char(seq_44_step_on_edge); // step on edge
