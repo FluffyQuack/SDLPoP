@@ -1409,6 +1409,17 @@ int play_kid_frame() {
 		load_frame_to_obj();
 		load_fram_det_col();
 		set_char_collision();
+
+		//Fluffy (DrawCollision)
+		kidYPos = obj_y;
+		image_type* img = get_image(obj_chtab, obj_id);
+		kidYSize = img->h - 1;
+		kidYColTop = char_top_y;
+		kidColX1 = char_x_left_coll;
+		kidColX2 = char_x_right_coll;
+		kidTileX = Char.curr_col;
+		kidTileY = Char.curr_row;
+
 		bump_into_opponent();
 		check_collisions();
 		check_bumped();

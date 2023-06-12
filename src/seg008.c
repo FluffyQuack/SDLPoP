@@ -1699,16 +1699,6 @@ void draw_kid() {
 
 		if (Kid.room != 0 && Kid.room == drawn_room && remote_current_level == current_level) {
 			add_kid_to_objtable();
-			
-			//Fluffy (DrawCollision)
-			kidYPos = obj_y;
-			image_type* img = get_image(obj_chtab, obj_id);
-			kidYSize = img->h - 1;
-			kidColX1 = char_x_left_coll;
-			kidColX2 = char_x_right_coll;
-			kidTileX = Char.curr_col;
-			kidTileY = Char.curr_row;
-
 			if (hitp_delta < 0) {
 				draw_hurt_splash();
 			}
