@@ -639,7 +639,7 @@ void bump_into_opponent() {
 	if (can_guard_see_kid >= 2 &&
 		Char.sword == sword_0_sheathed && // Kid must not be in fighting pose
 		Opp.sword != sword_0_sheathed && // but Guard must
-		Opp.action < 2 &&
+		(Opp.action == actions_0_stand || Opp.action == actions_1_run_jump) &&
 		Char.direction != Opp.direction // must be facing toward each other
 	) {
 		short distance = char_opp_dist();

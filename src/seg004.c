@@ -153,7 +153,7 @@ void check_bumped() {
 		Char.action != actions_2_hang_climb &&
 		Char.action != actions_6_hang_straight &&
 		// frames 135..149: climb up
-		(Char.frame < frame_135_climbing_1 || Char.frame >= 149)
+		(Char.frame < frame_135_climbing_1 || Char.frame >= frame_149_climbing_15)
 	) {
 #ifdef FIX_TWO_COLL_BUG
 		if (bump_col_left_of_wall >= 0) {

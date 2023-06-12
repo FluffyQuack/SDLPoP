@@ -270,18 +270,18 @@ void control() {
 		} else if (Char.charid >= charid_2_guard) {
 			control_guard_inactive();
 		} else if (char_frame == frame_15_stand || // standing
-			(char_frame>= frame_50_turn && char_frame<53) // end of turning
+			(char_frame >= frame_50_turn && char_frame <= frame_52_turn) // end of turning
 		) {
 			control_standing();
 		} else if (char_frame == frame_48_turn) { // a frame in turning
 			control_turning();
-		} else if (char_frame < 4) { // start run
+		} else if (char_frame < frame_4_start_run) { // start run
 			control_startrun();
-		} else if (char_frame >= frame_67_start_jump_up_1 && char_frame < frame_70_jumphang) { // start jump up
+		} else if (char_frame >= frame_67_start_jump_up_1 && char_frame <= frame_69_start_jump_up_3) { // start jump up
 			control_jumpup();
-		} else if (char_frame < 15) { // running
+		} else if (char_frame <= frame_14_run) { // running
 			control_running();
-		} else if (char_frame >= frame_87_hanging_1 && char_frame < 100) { // hanging
+		} else if (char_frame >= frame_87_hanging_1 && char_frame <= frame_99_hanging_13) { // hanging
 			control_hanging();
 		} else if (char_frame == frame_109_crouch) { // crouching
 			control_crouched();
@@ -915,7 +915,7 @@ void draw_sword() {
 
 // seg005:0C67
 void control_with_sword() {
-	if (Char.action < actions_2_hang_climb) {
+	if (Char.action == actions_0_stand || Char.action == actions_1_run_jump) {
 		if (get_tile_at_char() == tiles_11_loose || can_guard_see_kid >= 2) {
 			short distance = char_opp_dist();
 			if ((word)distance < (word)90) {
@@ -934,7 +934,7 @@ void control_with_sword() {
 			if (Char.charid == charid_0_kid && Char.alive < 0) {
 				holding_sword = 0;
 			}
-			if (Char.charid < charid_2_guard) {
+			if (Char.charid == charid_0_kid || Char.charid == charid_1_shadow) {
 				// frame 171: stand with sword
 				if (Char.frame == frame_171_stand_with_sword) {
 					Char.sword = sword_0_sheathed;
