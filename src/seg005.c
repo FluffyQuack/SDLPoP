@@ -498,7 +498,6 @@ void crouch() {
 
 // seg005:05BE
 void back_pressed() {
-	word seq_id;
 	control_backward = release_arrows();
 	// After turn, Kid will draw sword if ...
 	if (have_sword == 0 || // if Kid has sword
@@ -506,13 +505,12 @@ void back_pressed() {
 		char_opp_dist() > 0 || // and Guard was behind him
 		distance_to_edge_weight() < 2
 	) {
-		seq_id = seq_5_turn; // turn
+		seqtbl_offset_char(seq_5_turn); // turn
 	} else {
 		Char.sword = sword_2_drawn;
 		offguard = 0;
-		seq_id = seq_89_turn_draw_sword; // turn and draw sword
+		seqtbl_offset_char(seq_89_turn_draw_sword); // turn and draw sword
 	}
-	seqtbl_offset_char(seq_id);
 }
 
 // seg005:060F
@@ -949,7 +947,6 @@ void control_with_sword() {
 
 // seg005:0CDB
 void swordfight() {
-	short seq_id;
 	short frame = Char.frame;
 	short charid = Char.charid;
 	// frame 161: parry
@@ -971,13 +968,12 @@ void swordfight() {
 				offguard = 1;
 				guard_refrac = 9;
 				holding_sword = 0;
-				seq_id = seq_93_put_sword_away_fast; // put sword away fast (down pressed)
+				seqtbl_offset_char(seq_93_put_sword_away_fast); // put sword away fast (down pressed)
 			} else if (charid == charid_1_shadow) {
-				seq_id = seq_92_put_sword_away; // put sword away
+				seqtbl_offset_char(seq_92_put_sword_away); // put sword away
 			} else {
-				seq_id = seq_87_guard_become_inactive; // stand inactive (when Kid leaves sight)
+				seqtbl_offset_char(seq_87_guard_become_inactive); // stand inactive (when Kid leaves sight)
 			}
-			seqtbl_offset_char(seq_id);
 		}
 	} else if (control_up == CONTROL_HELD) {
 		parry();
