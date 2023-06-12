@@ -955,6 +955,7 @@ extern int currentKidCharTable; //Current kid sprite data we're using for drawin
 //Fluffy (DrawCollision)
 extern int kidYPos;
 extern int kidYSize;
+extern int kidYColTop;
 extern int kidColX1;
 extern int kidColX2;
 extern int kidTileX;
