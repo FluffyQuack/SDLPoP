@@ -598,7 +598,7 @@ void play_seq() {
 				start_chompers();
 				break;
 			case SEQ_DOWN: // down
-				inc_curr_row();
+				++Char.curr_row;
 				start_chompers();
 				break;
 			case SEQ_ACTION: // action
@@ -1077,7 +1077,7 @@ void start_fall() {
 	word seq_id;
 	short frame = Char.frame;
 	Char.sword = sword_0_sheathed;
-	inc_curr_row();
+	++Char.curr_row;
 	start_chompers();
 	fall_frame = frame;
 	if (frame == frame_9_run) {
@@ -2123,9 +2123,4 @@ int char_opp_dist() {
 		distance += 13;
 	}
 	return distance;
-}
-
-// seg006:189B
-void inc_curr_row() {
-	++Char.curr_row;
 }

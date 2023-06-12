@@ -105,7 +105,7 @@ void do_fall() {
 		if (tile_is_floor(curr_tile2)) {
 			land();
 		} else {
-			inc_curr_row();
+			++Char.curr_row;
 		}
 	}
 }

@@ -355,7 +355,6 @@ void check_killed_shadow(void);
 void add_sword_to_objtable(void);
 void control_guard_inactive(void);
 int char_opp_dist(void);
-void inc_curr_row(void);
 #ifdef USE_JUMP_GRAB
 bool check_grab_run_jump(void);
 #endif

@@ -998,7 +998,7 @@ void hurt_by_sword() {
 		} else {
 			Char.x = char_dx_forward(distance - 20);
 			load_fram_det_col();
-			inc_curr_row();
+			++Char.curr_row;
 			seqtbl_offset_char(seq_81_kid_pushed_off_ledge); // Kid/Guard is killed and pushed off the ledge
 		}
 	} else {
