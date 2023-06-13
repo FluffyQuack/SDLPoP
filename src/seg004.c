@@ -40,6 +40,11 @@ const sbyte wall_dist_from_right[] = {0, 0, 10, 13, 0, 0};
 
 // seg004:0004
 void check_collisions() {
+
+	//Fluffy (DrawCollision)
+	leftWallCollision = 0;
+	rightWallCollision = 0;
+
 	bump_col_left_of_wall = bump_col_right_of_wall = -1;
 	if (Char.action == actions_7_turn) return;
 	collision_row = Char.curr_row;
@@ -54,6 +59,20 @@ void check_collisions() {
 		if (curr_row_coll_room[column] >= 0 &&
 			prev_coll_room[column] == curr_row_coll_room[column]
 		) {
+			//Fluffy (DrawCollision)
+			if((curr_row_coll_flags[column] & 0xF0) != 0)
+			{
+				leftWallCollision = 1;
+				if((prev_coll_flags[column] & 0xF0) == 0)
+					leftWallCollision = 2;
+			}
+			if((curr_row_coll_flags[column] & 0x0F) != 0)
+			{
+				rightWallCollision = 1;
+				if((prev_coll_flags[column] & 0x0F) == 0)
+					rightWallCollision = 2;
+			}
+
 			// char bumps into left of wall
 			if (
 				(prev_coll_flags[column] & 0x0F) == 0 &&

@@ -973,6 +973,8 @@ extern int guardYPos;
 extern int guardYSize;
 extern int guardColX1;
 extern int guardColX2;
+extern int leftWallCollision;
+extern int rightWallCollision;
 
 #undef INIT
 #undef extern

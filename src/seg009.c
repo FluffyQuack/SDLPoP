@@ -2990,7 +2990,7 @@ static RenderGameTextures(int targetX, int targetY, int presentY, bool correctAs
 }
 
 //Fluffy (DrawCollision)
-static void DrawRectangleStroke(unsigned char *data, int x1, int y1, int x2, int y2, unsigned char r, unsigned char g, unsigned char b, float alpha)
+static void DrawRectangleStroke(unsigned char *data, int x1, int x2, int y1, int y2, unsigned char r, unsigned char g, unsigned char b, float alpha)
 {
 	if((x1 < 0 && x2 < 0) || (x1 >= 320 && x2 >= 320) || (y1 < 0 && y2 < 0) || (y1 >= 200 && y2 >= 200))
 		return;
@@ -3067,7 +3067,7 @@ static void DrawRectangleStroke(unsigned char *data, int x1, int y1, int x2, int
 }
 
 //Fluffy (DrawCollision)
-static void DrawRectangleStroke_Intermediate(SDL_Surface *surface, short objxLeft, short objxRight, int obj_y, int height, unsigned char r, unsigned char g, unsigned char b, float alpha)
+static void DrawRectangleStroke_Intermediate(unsigned char *data, short objxLeft, short objxRight, int obj_y, int height, unsigned char r, unsigned char g, unsigned char b, float alpha)
 {
 	//Convert to screen space coordinates
 	short obj_x_left = (((int) (objxLeft)) << 1) - 116;
@@ -3077,7 +3077,21 @@ static void DrawRectangleStroke_Intermediate(SDL_Surface *surface, short objxLef
 	short xpos_left = (short) obj_x_left *320/280;
 	short xpos_right = (short) obj_x_right *320/280;
 		
-	DrawRectangleStroke(surface->pixels, xpos_left, obj_y - height, xpos_right, obj_y, r, g, b, alpha);
+	DrawRectangleStroke(data, xpos_left, xpos_right, obj_y - height, obj_y, r, g, b, alpha);
+}
+
+//Fluffy (DrawCollision)
+static void DrawRectangleStroke_Intermediate_ExactY(unsigned char *data, short objxLeft, short objxRight, int y1, int y2, unsigned char r, unsigned char g, unsigned char b, float alpha)
+{
+	//Convert to screen space coordinates
+	short obj_x_left = (((int) (objxLeft)) << 1) - 116;
+	short obj_x_right = (((int) (objxRight)) << 1) - 116;
+		
+	//Convert from Apple II screen space to DOS screen space coordinates
+	short xpos_left = (short) obj_x_left *320/280;
+	short xpos_right = (short) obj_x_right *320/280;
+		
+	DrawRectangleStroke(data, xpos_left, xpos_right, y1, y2, r, g, b, alpha);
 }
 
 void update_screen() {
@@ -3086,6 +3100,7 @@ void update_screen() {
 	SDL_Surface *surface = onscreen_surface_; //Fluffy (MultiRoomRendering)
 
 	//Fluffy (DrawCollision)
+	if(0)
 	{
 		//Draw vertical lines representing wall collision (vertical size is arbitrary)
 		//TODO: We should double check and make sure this does truly correspond to the exact collision point of walls
@@ -3098,23 +3113,36 @@ void update_screen() {
 			{
 				int tileType = leftroom_[y].tiletype;
 				int rightTileType = get_tile(loaded_room, 0, y);
+				int y1_floor = y_land[y + 1];
+				//int y1_wall = y_land[y] + (63 / 3);
+				int y1_wall = y_land[y] + 1;
+				//int y2_wall = y1 + (63 / 2);
+				int y2_wall = y1_wall + 61;
 
-				if(tileType != tiles_0_empty && tileType != tiles_9_bigpillar_top && tileType != tiles_20_wall) //Floor
+				if(tileType != tiles_0_empty && tileType != tiles_9_bigpillar_top && tileType != tiles_20_wall) //Floor (inaccurate x coordinate)
 				{
 					int x1 = (9 * 32) + 16;
 					x1 -= 10 * 32;
-					int y1 = y_land[y + 1];
-					DrawRectangleStroke(surface->pixels, x1, y1, x1 + 31, y1, 150, 150, 0, 1.0f);
+					DrawRectangleStroke(surface->pixels, x1, x1 + 31, y1_floor, y1_floor, 150, 150, 0, 1.0f);
 				}
 				else if(tileType == tiles_20_wall && rightTileType != tiles_20_wall) //Wall
 				{
-					int x1 = (9 * 32) + 16;
-					x1 -= 10 * 32;
-					int y1 = y_land[y] + 1/* + (63 / 3)*/;
-					int y2 = y1 + 61/* + (63 / 2)*/;
-					//DrawRectangleStroke(surface->pixels, x1, y1, x1, y2, 200, 200, 0, 1.0f); //Skip left line for wall
-					x1 += 32;
-					DrawRectangleStroke(surface->pixels, x1, y1, x1, y2, 200, 200, 0, 1.0f);
+					if(0) //Inaccurate screen space wall collision coordinates
+					{
+						int x1 = (9 * 32) + 16;
+						x1 -= 10 * 32;
+						//DrawRectangleStroke(surface->pixels, x1, x1, y1_wall, y2_wall, 200, 200, 0, 1.0f); //Skip left line for wall
+						x1 += 32;
+						DrawRectangleStroke(surface->pixels, x1, x1, y1_wall, y2_wall, 200, 200, 0, 1.0f);
+					}
+					else //Correct internal collision coordinates
+					{
+						int x1 = 51;
+						DrawRectangleStroke_Intermediate_ExactY(surface->pixels, x1, x1, y1_wall, y2_wall, 200, 200, 0, 1.0f);
+						x1 = 64;
+						DrawRectangleStroke_Intermediate_ExactY(surface->pixels, x1, x1, y1_wall, y2_wall, 200, 200, 0, 1.0f);
+					}
+						
 				}
 			}
 
@@ -3127,50 +3155,70 @@ void update_screen() {
 					if(x == 0) leftTileType = leftroom_[y].tiletype;
 					else leftTileType = get_tile(loaded_room, x - 1, y);
 
-					if(tileType != tiles_0_empty && tileType != tiles_9_bigpillar_top && tileType != tiles_20_wall) //Floor
+					int y1_floor = y_land[y + 1];
+					//int y1_wall = y_land[y] + (63 / 3);
+					int y1_wall = y_land[y] + 1;
+					//int y2_wall = y1 + (63 / 2);
+					int y2_wall = y1_wall + 61;
+
+					if(tileType != tiles_0_empty && tileType != tiles_9_bigpillar_top && tileType != tiles_20_wall) //Floor (inaccurate x coordinate)
 					{
 						int x1 = (x * 32) + 16;
-						int y1 = y_land[y + 1];
-						DrawRectangleStroke(surface->pixels, x1, y1, x1 + 31, y1, 150, 150, 0, 1.0f);
+						DrawRectangleStroke(surface->pixels, x1, x1 + 31, y1_floor, y1_floor, 150, 150, 0, 1.0f);
 					}
 					else if(tileType == tiles_20_wall) //Wall
 					{
-						int x1 = (x * 32) + 16;
-						int y1 = y_land[y] + 1/* + (63 / 3)*/;
-						int y2 = y1 + 61/* + (63 / 2)*/;
-						if(leftTileType != tiles_20_wall)
-							DrawRectangleStroke(surface->pixels, x1, y1, x1, y2, 200, 200, 0, 1.0f);
-						x1 += 32;
-						if(rightTileType != tiles_20_wall)
-							DrawRectangleStroke(surface->pixels, x1, y1, x1, y2, 200, 200, 0, 1.0f);
+						if(0) //Inaccurate screen space wall collision coordinates
+						{
+							int x1 = (x * 32) + 16;
+							if(leftTileType != tiles_20_wall)
+								DrawRectangleStroke(surface->pixels, x1, x1, y1_wall, y2_wall, 200, 200, 0, 1.0f);
+							x1 += 32;
+							if(rightTileType != tiles_20_wall)
+								DrawRectangleStroke(surface->pixels, x1, x1, y1_wall, y2_wall, 200, 200, 0, 1.0f);
+						}
+						else //Correct internal collision coordinates
+						{
+							int x1 = 65 + (x * TILE_SIZEX);
+							if(leftTileType != tiles_20_wall)
+								DrawRectangleStroke_Intermediate_ExactY(surface->pixels, x1, x1, y1_wall, y2_wall, 200, 200, 0, 1.0f);
+							x1 = 78 + (x * TILE_SIZEX);
+							if(rightTileType != tiles_20_wall)
+								DrawRectangleStroke_Intermediate_ExactY(surface->pixels, x1, x1, y1_wall, y2_wall, 200, 200, 0, 1.0f);
+						}
 					}
 				}
 		}
 		else
 		{
-			//Draw wall collision for current tile
+			//Draw wall collision for current tile //TODO: This is not accurate
 			{
 				int x1 = (kidTileX * 32) + 16;
 				int y1 = y_land[kidTileY] + (63 / 3);
 				int y2 = y1 + (63 / 2);
-				DrawRectangleStroke(surface->pixels, x1, y1, x1, y2, 200, 200, 0, 1.0f);
+				DrawRectangleStroke(surface->pixels, x1, x1, y1, y2, 200, 200, 0, 1.0f);
 				x1 += 32;
-				DrawRectangleStroke(surface->pixels, x1, y1, x1, y2, 200, 200, 0, 1.0f);
+				DrawRectangleStroke(surface->pixels, x1, x1, y1, y2, 200, 200, 0, 1.0f);
 			}
 
 			//Floor collision for current tile
 			{
 				int x1 = (kidTileX * 32) + 16;
 				int y1 = y_land[kidTileY + 1];
-				DrawRectangleStroke(surface->pixels, x1, y1, x1 + 31, y1, 150, 150, 0, 1.0f);
+				DrawRectangleStroke(surface->pixels, x1, x1 + 31, y1, y1, 150, 150, 0, 1.0f);
 			}
 		}
 
-		DrawRectangleStroke_Intermediate(surface, kidColX1, kidColX2, kidYPos, kidYSize, 255, 255, 255, 0.5f); //Kid collision box
-		DrawRectangleStroke_Intermediate(surface, kidFootX, kidFootX, kidYPos + 2, 1, 255, 255, 255, 0.5f); //Kid "weight" position
+		DrawRectangleStroke_Intermediate(surface->pixels, kidColX1, kidColX2, kidYPos, kidYSize, 255, 255, 255, 0.5f); //Kid collision box
+		if(leftWallCollision == 1) DrawRectangleStroke_Intermediate(surface->pixels, kidColX1, kidColX1, kidYPos, kidYSize, 255, 200, 200, 1.0f);
+		else if(leftWallCollision == 2) DrawRectangleStroke_Intermediate(surface->pixels, kidColX1, kidColX1, kidYPos, kidYSize, 255, 0, 0, 1.0f);
+		if(rightWallCollision == 1) DrawRectangleStroke_Intermediate(surface->pixels, kidColX2, kidColX2, kidYPos, kidYSize, 255, 200, 200, 1.0f);
+		else if(rightWallCollision == 2) DrawRectangleStroke_Intermediate(surface->pixels, kidColX2, kidColX2, kidYPos, kidYSize, 255, 0, 0, 1.0f);
+
+		DrawRectangleStroke_Intermediate(surface->pixels, kidFootX, kidFootX, kidYPos + 2, 1, 255, 255, 255, 0.5f); //Kid "weight" position
 
 		if(guardYSize)
-			DrawRectangleStroke_Intermediate(surface, guardColX1, guardColX2, guardYPos, guardYSize, 128, 255, 255, 0.5f); //Guard collision box
+			DrawRectangleStroke_Intermediate(surface->pixels, guardColX1, guardColX2, guardYPos, guardYSize, 128, 255, 255, 0.5f); //Guard collision box
 
 		//Draw debug text with player position
 		rect_type rect;
