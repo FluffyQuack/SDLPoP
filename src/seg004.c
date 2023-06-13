@@ -45,11 +45,11 @@ void check_collisions() {
 	leftWallCollision = 0;
 	rightWallCollision = 0;
 
-	bump_col_left_of_wall = bump_col_right_of_wall = -1;
-	if (Char.action == actions_7_turn) return;
-	collision_row = Char.curr_row;
-	move_coll_to_prev();
-	prev_collision_row = collision_row;
+	bump_col_left_of_wall = bump_col_right_of_wall = -1; // Reset collision 
+	if (Char.action == actions_7_turn) return; // If character is in turning state, then skip collision check against wall
+	collision_row = Char.curr_row; // Note character's current row
+	move_coll_to_prev(); // Save collision information for the row of tiles the character is on right now from last gameplay tick where character wasn't turning
+	prev_collision_row = collision_row; // Remember row player is on right now for next gameplay tick
 	right_checked_col = MIN(get_tile_div_mod_m7(char_x_right_coll) + 2, 11);
 	left_checked_col = get_tile_div_mod_m7(char_x_left_coll) - 1;
 	get_row_collision_data(collision_row    , curr_row_coll_room, curr_row_coll_flags);
@@ -73,19 +73,18 @@ void check_collisions() {
 					rightWallCollision = 2;
 			}
 
-			// char bumps into left of wall
+			// We check against collision info from previous gameplay tick in order to tell if this is a new collision (or is it to tell what direction the player is moving in?)
 			if (
 				(prev_coll_flags[column] & 0x0F) == 0 &&
 				(curr_row_coll_flags[column] & 0x0F) != 0
 			) {
-				bump_col_left_of_wall = column;
+				bump_col_left_of_wall = column; // char bumps into left of wall
 			}
-			// char bumps into right of wall
 			if (
 				(prev_coll_flags[column] & 0xF0) == 0 &&
 				(curr_row_coll_flags[column] & 0xF0) != 0
 			) {
-				bump_col_right_of_wall = column;
+				bump_col_right_of_wall = column; // char bumps into right of wall
 			}
 		}
 	}
