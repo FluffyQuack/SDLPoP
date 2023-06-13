@@ -3100,7 +3100,7 @@ void update_screen() {
 	SDL_Surface *surface = onscreen_surface_; //Fluffy (MultiRoomRendering)
 
 	//Fluffy (DrawCollision)
-	if(0)
+	if(1)
 	{
 		//Draw vertical lines representing wall collision (vertical size is arbitrary)
 		//TODO: We should double check and make sure this does truly correspond to the exact collision point of walls
