@@ -114,7 +114,11 @@ int access_UTF8(const char* filename_UTF8, int mode) {
 int stat_UTF8(const char *filename_UTF8, struct stat *_Stat) {
 	WCHAR* filename_UTF16 = WIN_UTF8ToString(filename_UTF8);
 	// There is a _wstat() function as well, but it expects the second argument to be a different type than stat().
-	int result = _wstat(filename_UTF16, _Stat); //Fluffy: Replaced call to wstat() with _wstat(). Is that safe?
+#ifdef _MSC_VER
+	int result = _wstat(filename_UTF16, _Stat);
+#else
+	int result = wstat(filename_UTF16, _Stat);
+#endif
 	SDL_free(filename_UTF16);
 	return result;
 }

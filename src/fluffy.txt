@@ -10,15 +10,16 @@ Edits required:
 set CommonCompilerFlags= /nologo /MP /fp:fast /GR- /wd4048 %PreprocessorDefinitions% /I"%SDL2%\include\SDL2" /I"%SDL2_Image%\include\SDL2"
 set CommonLinkerFlags= /subsystem:windows,5.01 /libpath:"%SDL2%\lib\" /libpath:"%SDL2_Image%\lib\" /libpath:"%SDL2%\lib\manual-link\" Shell32.lib SDL2main.lib SDL2.lib SDL2_image.lib icon.res /out:..\prince.exe
 
-- Edited seg000.c to included these lines to fix a compile error:
-
-//Fluffy: Added this since we got compile error due to missing M_PI
-#ifndef M_PI
-	#define M_PI  3.14159265358979323846264f  // from CRC
-#endif
+- Added this line before #include <math.h> to seg000.c:
+#define _USE_MATH_DEFINES
 
 - Commented out the code calling SetProcessDPIAware() in seg009.c to fix a compilation error
 
-- Renamed the "wstat()" call to "_wstat()" in seg009.c
+- In seg009.c did this replacement of int result = wstat(filename_UTF16, _Stat); :
+#ifdef _MSC_VER
+	int result = _wstat(filename_UTF16, _Stat);
+#else
+	int result = wstat(filename_UTF16, _Stat);
+#endif
 
 - Maybe it would be possible to create a visual studio project?
