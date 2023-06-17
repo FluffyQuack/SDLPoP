@@ -346,10 +346,9 @@ void bumped_floor(sbyte push_direction) {
 						seq_index = seq_64_pushed_back_with_sword; // pushed back with sword
 					}
 				} else {
-					short frame = Char.frame;
-					if (frame == 24 || frame == 25 ||
-						(frame >= 40 && frame < 43) ||
-						(frame >= frame_102_start_fall_1 && frame < 107)
+					if (Char.frame == frame_24_standing_jump_9 || Char.frame == frame_25_standing_jump_10 ||
+						(Char.frame >= frame_40_running_jump_1 && Char.frame < frame_43_running_jump_4) ||
+						(Char.frame >= frame_102_start_fall_1 && Char.frame < frame_107_fall_land_1)
 					) {
 						seq_index = seq_46_hardbump; // bump into wall after run-jump (crouch)
 					} else {
