@@ -314,9 +314,8 @@ void bumped(sbyte delta_x,sbyte push_direction) {
 
 // seg004:04E4
 void bumped_fall() {
-	short action = Char.action;
 	Char.x = char_dx_forward(-4);
-	if (action == actions_4_in_freefall) {
+	if (Char.action == actions_4_in_freefall) {
 		Char.fall_x = 0;
 	} else {
 		seqtbl_offset_char(seq_45_bumpfall); // fall after bumped
