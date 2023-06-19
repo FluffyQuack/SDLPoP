@@ -976,6 +976,9 @@ extern int guardColX2;
 extern int leftWallCollision;
 extern int rightWallCollision;
 
+//Fluffy (FrameByFrame)
+extern bool debugFramebyFrame;
+
 #undef INIT
 #undef extern
 

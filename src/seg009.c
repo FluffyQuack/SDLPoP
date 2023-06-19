@@ -3907,6 +3907,10 @@ void process_events() {
 				int modifier = event.key.keysym.mod;
 				int scancode = event.key.keysym.scancode;
 
+				//Fluffy (FrameByFrame)
+				if(scancode == SDL_SCANCODE_TAB && (key_states[scancode] & KEYSTATE_HELD) == 0 && !ignore_tab)
+					debugFramebyFrame = !debugFramebyFrame;
+
 				// Handle these separately, so they won't interrupt things that are usually interrupted by a keypress. (pause, cutscene)
 #ifdef USE_FAST_FORWARD
 				if (scancode == SDL_SCANCODE_GRAVE) {
@@ -4255,7 +4259,22 @@ void do_simple_wait(int timer_index) {
 #endif
 	//update_screen(); //Fluffy (MultiRoomRendering): Commented this away since we now do update_screen below
 	bool first = 1; //Fluffy (MultiRoomRendering)
-	while (! has_timer_stopped(timer_index)) {
+	while(1) //Fluffy (FrameByFrame): Made this loop endless by default and moved the actual check to the start of the loop
+	{
+		//Fluffy (FrameByFrame)
+		if(debugFramebyFrame) //Only advance when space bar is pressed
+		{
+			if(key_states[SDL_SCANCODE_SPACE] & KEYSTATE_HELD_NEW)
+			{
+				key_states[SDL_SCANCODE_SPACE] &= ~KEYSTATE_HELD_NEW;
+				break;
+			}
+		}
+		else //Normal behaviour
+		{
+			if(has_timer_stopped(timer_index))
+				break;
+		}
 		if(first || renderPosOffsetPrevious != renderPosOffsetTarget)
 			update_screen(); //Fluffy (MultiRoomRendering): Calling this so camera can smoothly move between rooms inbetween the game's 12fps tick rate, though it's only necessary to call this while the camera is moving
 		SDL_Delay_NetworkUpdate(1); //(Fluffy (Multiplayer): Replaced this call so we can also do a network update)
