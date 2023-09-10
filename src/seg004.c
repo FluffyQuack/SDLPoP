@@ -397,11 +397,11 @@ int get_edge_distance() {
 	load_frame_to_obj();
 	set_char_collision();
 	byte tiletype = get_tile_at_char();
-	if (wall_type(tiletype) != 0) {
+	if (wall_type(tiletype) != 0) { // If the tile player is on has collision then calculate distance to collision on this tile
 		tile_col = Char.curr_col;
 		distance = dist_from_wall_forward(tiletype);
 		if (distance >= 0) {
-			loc_59DD:
+			distance_to_collision:
 			if (distance <= TILE_RIGHTX) {
 				edge_type = EDGE_TYPE_EDGE;
 			} else {
@@ -409,22 +409,22 @@ int get_edge_distance() {
 				distance = 11;
 			}
 		} else {
-			goto loc_59E8;
+			goto tile_ahead;
 		}
-	} else {
-		loc_59E8:
+	} else { // If the tile player is on doesn't have collision then process tile in front of the player
+		tile_ahead:
 		tiletype = get_tile_infrontof_char();
 		if (tiletype == tiles_12_doortop && Char.direction >= dir_0_right) {
-			loc_59FB:
+			distance_to_other:
 			edge_type = EDGE_TYPE_CLOSER;
 			distance = distance_to_edge_weight();
 		} else {
 			if (wall_type(tiletype) != 0) {
 				tile_col = infrontx;
 				distance = dist_from_wall_forward(tiletype);
-				if (distance >= 0) goto loc_59DD;
+				if (distance >= 0) goto distance_to_collision;
 			}
-			if (tiletype == tiles_11_loose) goto loc_59FB;
+			if (tiletype == tiles_11_loose) goto distance_to_other;
 			if (
 				tiletype == tiles_6_closer ||
 				tiletype == tiles_22_sword ||
@@ -442,7 +442,7 @@ int get_edge_distance() {
 					edge_type = EDGE_TYPE_FLOOR;
 					distance = 11;
 				} else {
-					goto loc_59FB;
+					goto distance_to_other;
 				}
 			}
 		}
