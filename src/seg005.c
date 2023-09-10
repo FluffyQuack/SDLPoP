@@ -833,7 +833,7 @@ void grab_up_with_floor_behind() {
 									? (distance < 4 && edge_type != EDGE_TYPE_EDGE)									\
 									: (distance < 4 && edge_distance < 4 && edge_type != EDGE_TYPE_EDGE)
 	#else
-	#define JUMP_STRAIGHT_CONDITION distance < 4 && edge_distance < 4 && edge_type != 1
+	#define JUMP_STRAIGHT_CONDITION distance < 4 && edge_distance < 4 && edge_type != EDGE_TYPE_EDGE
 	#endif
 
 	if (JUMP_STRAIGHT_CONDITION) {
