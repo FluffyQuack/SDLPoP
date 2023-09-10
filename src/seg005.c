@@ -575,7 +575,7 @@ int check_get_item() {
 		if (! tile_is_floor(get_tile_behind_char())) {
 			return 0;
 		}
-		Char.x = char_dx_forward(-14);
+		Char.x = char_dx_forward(-TILE_SIZEX);
 		load_fram_det_col();
 	}
 	if (get_tile_infrontof_char() == tiles_10_potion ||
