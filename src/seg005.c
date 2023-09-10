@@ -847,7 +847,6 @@ void grab_up_with_floor_behind() {
 
 // seg005:0AF7
 void run_jump() {
-	short pos_adjustment;
 	if (Char.frame >= frame_7_run) {
 		// Align Kid to edge of floor.
 		short xpos = char_dx_forward(4);
@@ -856,7 +855,7 @@ void run_jump() {
 			col += dir_front[Char.direction + 1];
 			get_tile(Char.room, col, Char.curr_row);
 			if (curr_tile2 == tiles_2_spike || ! tile_is_floor(curr_tile2)) {
-				pos_adjustment = distance_to_edge(xpos) + TILE_SIZEX * tiles_forward - TILE_SIZEX;
+				short pos_adjustment = distance_to_edge(xpos) + TILE_SIZEX * tiles_forward - TILE_SIZEX;
 				if ((word)pos_adjustment < (word)-8 || pos_adjustment >= 2) {
 					if (pos_adjustment < 128) return;
 					pos_adjustment = -3;
