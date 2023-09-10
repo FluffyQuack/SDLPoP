@@ -350,11 +350,11 @@ extern short trobs_count;
 // data:4062
 extern short next_sound;
 // data:34AA
-extern word grab_timer;
+extern word grab_timer; // The player has to wait for this to tick down to 0 to be able to climb up while hanging from a ledge
 // data:594C
 extern short can_guard_see_kid;
 // data:594E
-extern word holding_sword;
+extern word holding_sword; // This is for remembering the player died in a fight so the game can start the "death during fighting" game over music
 // data:4E90
 extern short united_with_shadow;
 // data:409C
