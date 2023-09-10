@@ -505,7 +505,7 @@ void check_gate_push() {
 	short frame = Char.frame;
 	if (Char.action == actions_7_turn ||
 		frame == frame_15_stand || // stand
-		(frame >= frame_108_fall_land_2 && frame < 111) // crouch
+		(frame >= frame_108_fall_land_2 && frame < frame_111_stand_up_from_crouch_2) // crouch
 	) {
 		get_tile_at_char();
 		short orig_col = tile_col;
