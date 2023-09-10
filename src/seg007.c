@@ -936,8 +936,8 @@ int next_chomper_timing(byte timing) {
 
 // seg007:0FB4
 void loose_make_shake() {
-	// don't shake on level 13
-	if (curr_room_modif[curr_tilepos] == 0 && current_level != /*13*/ custom->loose_tiles_level) {
+	if (curr_room_modif[curr_tilepos] == 0 && // Only affect tiles that aren't shaking
+		current_level != /*13*/ custom->loose_tiles_level) { // don't shake on level 13
 		curr_room_modif[curr_tilepos] = 0x80;
 		add_trob(curr_room, curr_tilepos, 1);
 	}
