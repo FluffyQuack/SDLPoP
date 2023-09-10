@@ -280,9 +280,10 @@ void animate_sword() {
 
 // seg007:0448
 void animate_chomper() {
+	word frame = curr_modifier & 0x7F;
 	if (trob.type >= 0) {
 		word blood = curr_modifier & 0x80;
-		word frame = (curr_modifier & 0x7F) + 1;
+		frame++;
 		if (frame > /*15*/ custom->chomper_speed) {
 			frame = 1;
 		}
@@ -297,12 +298,12 @@ void animate_chomper() {
 		// and chomper is past frame 6
 		// then stop.
 		if ((trob.room != drawn_room || trob.tilepos / 10 != Kid.curr_row ||
-			(Kid.alive >= 0 && blood == 0)) && (curr_modifier & 0x7F) >= 6
+			(Kid.alive >= 0 && blood == 0)) && frame >= 6
 		) {
 			trob.type = -1;
 		}
 	}
-	if ((curr_modifier & 0x7F) < 6) {
+	if (frame < 6) {
 		redraw_at_trob();
 	}
 }
