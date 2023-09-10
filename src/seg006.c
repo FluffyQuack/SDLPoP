@@ -1152,8 +1152,6 @@ void start_fall() {
 
 // seg006:0A19
 void check_grab() {
-	word old_x;
-
 	#ifdef FIX_GRAB_FALLING_SPEED
 	#define MAX_GRAB_FALLING_SPEED (fixes->fix_grab_falling_speed ? 30 : 32)
 	#else
@@ -1170,7 +1168,7 @@ void check_grab() {
 		(word)y_land[Char.curr_row + 1] <= (word)(Char.y + 25)
 	) {
 		//printf("Falling speed: %d\t x: %d\n", Char.fall_y, Char.x);
-		old_x = Char.x;
+		word old_x = Char.x;
 #ifdef USE_SUPER_HIGH_JUMP
 // delta_x makes grabbing easier
 #define SUPER_HIGH_JUMP_DELTA_X (Char.direction == dir_FF_left ? 3 : 5)
