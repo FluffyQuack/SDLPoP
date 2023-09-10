@@ -367,11 +367,9 @@ Possible values of anim_type:
 				if (anim_type == 0) {
 					// closing
 					if (curr_modifier != 0) {
-						if (curr_modifier < 188) {
-							if ((curr_modifier & 3) == 3) {
+						if (curr_modifier < 188 && (curr_modifier & 3) == 3) {
 								play_door_sound_if_visible(sound_4_gate_closing); // gate closing
 							}
-						}
 					} else {
 						gate_stop();
 					}
