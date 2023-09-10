@@ -951,7 +951,7 @@ void check_spiked() {
 		// frame 43: land from run-jump
 		// frame 26: lang from standing jump
 		if (
-			(harmful >= 2 && ((frame>= frame_7_run && frame<15) || (frame>=frame_34_start_run_jump_1 && frame<40))) ||
+			(harmful >= 2 && ((frame >= frame_7_run && frame <= frame_14_run) || (frame >= frame_34_start_run_jump_1 && frame <= frame_39_start_run_jump_6))) ||
 			((frame == frame_43_running_jump_4 || frame == frame_26_standing_jump_11) && harmful != 0)
 		) {
 			spiked();
@@ -1097,7 +1097,7 @@ void start_fall() {
 		seq_id = seq_19_fall; // fall after jumping up
 		Char.x = char_dx_forward(5);
 		load_fram_det_col();
-	} else if (frame >= 150 && frame < 180) {
+	} else if (frame >= frame_150_parry && frame < frame_180_collapse_2) {
 		// frame 150..179: with sword + fall + dead
 		if (Char.charid == charid_2_guard) {
 			if (Char.curr_row == 3 && Char.curr_col == 10) {
@@ -1140,7 +1140,7 @@ void start_fall() {
 		#endif
 
 			) {
-		if (fall_frame != 44 || distance_to_edge_weight() >= 6) {
+		if (fall_frame != frame_44_running_jump_5 || distance_to_edge_weight() >= 6) {
 			Char.x = char_dx_forward(-1);
 		} else {
 			seqtbl_offset_char(seq_104_start_fall_in_front_of_wall); // start fall (when?)
@@ -1662,10 +1662,10 @@ void check_press() {
 	short action = Char.action;
 	// frames 87..99: hanging
 	// frames 135..140: start climb up
-	if ((frame >= frame_87_hanging_1 && frame < 100) || (frame >= frame_135_climbing_1 && frame < frame_141_climbing_7)) {
+	if ((frame >= frame_87_hanging_1 && frame <= frame_99_hanging_13) || (frame >= frame_135_climbing_1 && frame < frame_141_climbing_7)) {
 		// the pressed tile is the one that the char is grabbing
 		get_tile_above_char();
-	} else if (action == actions_7_turn || action == actions_5_bumped || action < actions_2_hang_climb) {
+	} else if (action == actions_7_turn || action == actions_5_bumped || action == actions_0_stand || action == actions_1_run_jump) {
 		// frame 79: jumping up
 		if (frame == frame_79_jumphang && get_tile_above_char() == tiles_11_loose) {
 			// break a loose floor from above
