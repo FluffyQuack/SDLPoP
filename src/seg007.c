@@ -995,7 +995,7 @@ void move_mob() {
 	if (curmob.type == 0) {
 		move_loose();
 	}
-	if (curmob.speed <= 0) {
+	if (curmob.speed <= 0) { // If speed is below 0, then we're counting up to -1 at which point we delete the mob
 		++curmob.speed;
 	}
 }
