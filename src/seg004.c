@@ -529,7 +529,11 @@ void check_gate_push() {
 			//printf("check_gate_push: orig_col = %d, tile_col = %d, curr_room = %d, Char.room = %d, orig_room = %d\n", orig_col, tile_col, curr_room, Char.room, orig_room);
 			// push Kid left if orig_col <= tile_col, gate at char's tile
 			// push Kid right if orig_col > tile_col, gate is left from char's tile
-			Char.x += 5 - (orig_col <= tile_col) * 10;
+			if (orig_col <= tile_col) {
+				Char.x -= 5;
+			} else {
+				Char.x += 5;
+			}
 		}
 	}
 }
