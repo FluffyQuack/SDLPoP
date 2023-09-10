@@ -1034,8 +1034,7 @@ void parry() {
 			) {
 				if (opp_frame == frame_153_strike_3) { // strike
 					do_play_seq = 1;
-				} else
-				if (char_charid != charid_0_kid) {
+				} else if (char_charid != charid_0_kid) {
 					back_with_sword();
 					return;
 				}
