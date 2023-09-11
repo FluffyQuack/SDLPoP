@@ -1409,7 +1409,8 @@ int play_kid_frame() {
 		//Fluffy (DrawCollision)
 		kidYPos = obj_y;
 		image_type* img = get_image(obj_chtab, obj_id);
-		kidYSize = img->h - 1;
+		if(img != NULL)
+			kidYSize = img->h - 1;
 		kidYColTop = char_top_y;
 		kidColX1 = char_x_left_coll;
 		kidColX2 = char_x_right_coll;
