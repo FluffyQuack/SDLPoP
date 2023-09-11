@@ -1240,6 +1240,7 @@ typedef struct fixes_options_type {
 	byte fix_falling_through_floor_during_sword_strike;
 	byte enable_jump_grab;
 	byte fix_register_quick_input;
+	byte manually_draw_sword; //Fluffy (ManuallyDrawSword)
 } fixes_options_type;
 
 #define NUM_GUARD_SKILLS 12

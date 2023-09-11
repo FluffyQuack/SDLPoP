@@ -204,6 +204,7 @@ enum setting_ids {
 	SETTING_FIX_DROP_2_ROOMS_CLIMBING_LOOSE_TILE,
 	SETTING_FIX_FALLING_THROUGH_FLOOR_DURING_SWORD_STRIKE,
 	SETTING_FIX_REGISTER_QUICK_INPUT,
+	SETTING_MANUALLY_DRAW_SWORD, //Fluffy (ManuallyDrawSword)
 	SETTING_ENABLE_SUPER_HIGH_JUMP,
 	SETTING_ENABLE_JUMP_GRAB,
 	SETTING_USE_CUSTOM_OPTIONS,
@@ -608,6 +609,11 @@ setting_type gameplay_settings[] = {
 				.linked = &fixes_saved.fix_register_quick_input, .required = &use_fixes_and_enhancements,
 				.text = "Fix fast inputs",
 				.explanation = "Input is ignored if a button or key is pressed and released between game ticks."},
+		//Fluffy (ManuallyDrawSword)
+		{.id = SETTING_MANUALLY_DRAW_SWORD, .style = SETTING_STYLE_TOGGLE,
+				.linked = &fixes_saved.manually_draw_sword, .required = &use_fixes_and_enhancements,
+				.text = "Manually draw sword",
+				.explanation = "Player is responsible for drawing and sheathing sword rather it being automatic."},
 };
 
 NAMES_LIST(tile_type_setting_names, {

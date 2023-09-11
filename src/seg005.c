@@ -344,11 +344,12 @@ void control_standing() {
 	if (control_shift2 == CONTROL_HELD && control_shift == CONTROL_HELD && check_get_item()) {
 		return;
 	}
-	if (Char.charid != charid_0_kid && control_down == CONTROL_HELD && control_forward == CONTROL_HELD) {
+	if ((Char.charid == charid_0_kid && have_sword && fixes->manually_draw_sword && control_up == CONTROL_HELD && control_shift == CONTROL_HELD) || //Fluffy (ManuallyDrawSword)
+		(Char.charid != charid_0_kid && control_down == CONTROL_HELD && control_forward == CONTROL_HELD)) {
 		draw_sword();
 		return;
-	} //else
-	if (have_sword) {
+	}
+	if (have_sword && !(fixes->manually_draw_sword && Char.charid == charid_0_kid)) { //Fluffy (ManuallyDrawSword)
 		if (offguard != 0 && control_shift >= CONTROL_RELEASED) goto guard_down;
 		if (can_guard_see_kid >= 2) {
 			short distance = char_opp_dist();
@@ -499,6 +500,13 @@ void crouch() {
 // seg005:05BE
 void back_pressed() {
 	control_backward = release_arrows();
+
+	if(fixes->manually_draw_sword && Char.charid == charid_0_kid) //Fluffy (ManuallyDrawSword)
+	{
+		seqtbl_offset_char(seq_5_turn);
+		return;
+	}
+
 	// After turn, Kid will draw sword if ...
 	if (have_sword == 0 || // if Kid has sword
 		can_guard_see_kid < 2 || // and can see Guard
@@ -931,7 +939,8 @@ void control_with_sword() {
 			if (Char.charid == charid_0_kid && Char.alive < 0) {
 				holding_sword = 0;
 			}
-			if (Char.charid == charid_0_kid || Char.charid == charid_1_shadow) {
+			if ((Char.charid == charid_0_kid && !fixes->manually_draw_sword) || //Fluffy (ManuallyDrawSword): Only automatically sheathe sword for kid if manually_draw_sword is false
+				Char.charid == charid_1_shadow) {
 				// frame 171: stand with sword
 				if (Char.frame == frame_171_stand_with_sword) {
 					Char.sword = sword_0_sheathed;
@@ -967,7 +976,10 @@ void swordfight() {
 				offguard = 1;
 				guard_refrac = 9;
 				holding_sword = 0;
-				seqtbl_offset_char(seq_93_put_sword_away_fast); // put sword away fast (down pressed)
+				if(fixes->manually_draw_sword && can_guard_see_kid < 2) //Fluffy (ManuallyDrawSword): Sheathe sword slowly if there's no opponent nearby
+					seqtbl_offset_char(seq_92_put_sword_away);
+				else
+					seqtbl_offset_char(seq_93_put_sword_away_fast); // put sword away fast (down pressed)
 			} else if (charid == charid_1_shadow) {
 				seqtbl_offset_char(seq_92_put_sword_away); // put sword away
 			} else {
